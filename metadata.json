@@ -1,0 +1,6 @@
+{
+  "name": "Portal Resmi Sekolah",
+  "description": "Portal Resmi Sekolah modern dan responsif dengan website publik informatif, dashboard Admin CMS lengkap, manajemen Data Master Sekolah, Sistem Akademik Terintegrasi, serta Modul Vokasi Lengkap (PKL/Internship, Bursa Kerja Khusus BKK, Direktori Alumni & Tracer Study Kuesioner) berbasis Firebase Firestore dan Authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

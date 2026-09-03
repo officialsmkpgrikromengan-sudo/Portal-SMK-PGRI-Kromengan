@@ -1,0 +1,368 @@
+{
+  "entities": {
+    "SchoolInfo": {
+      "title": "School Information",
+      "description": "General school identity, history, vision, mission, facilities, and contact information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "npsn": { "type": "string" },
+        "accreditation": { "type": "string" },
+        "headmasterName": { "type": "string" },
+        "headmasterSpeech": { "type": "string" },
+        "headmasterPhoto": { "type": "string" },
+        "history": { "type": "string" },
+        "vision": { "type": "string" },
+        "missions": { "type": "array", "items": { "type": "string" } },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "mapsEmbedUrl": { "type": "string" },
+        "socials": { "type": "object" },
+        "stats": { "type": "object" }
+      }
+    },
+    "News": {
+      "title": "News Item",
+      "description": "School news and articles",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "content": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "author": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "publishedAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "content", "status"]
+    },
+    "Event": {
+      "title": "School Event",
+      "description": "Upcoming and past school events and agendas",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "posterUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "date", "status"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "School and student competition achievements",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "studentName": { "type": "string" },
+        "level": { "type": "string" },
+        "rank": { "type": "string" },
+        "year": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "level", "rank", "year"]
+    },
+    "Gallery": {
+      "title": "Gallery Photo",
+      "description": "School activity photo gallery",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "imageUrl", "category"]
+    },
+    "Major": {
+      "title": "Program Keahlian (Major)",
+      "description": "Master data for vocational majors / study programs",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "shortName": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["code", "name", "status"]
+    },
+    "Subject": {
+      "title": "Mata Pelajaran (Subject)",
+      "description": "Master data for school curriculum subjects",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "group": { "type": "string", "enum": ["Umum", "Kejuruan", "Muatan Lokal", "Pilihan"] },
+        "majorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["code", "name", "group", "status"]
+    },
+    "Teacher": {
+      "title": "Guru (Teacher)",
+      "description": "Master data for teaching staff",
+      "type": "object",
+      "properties": {
+        "nip": { "type": "string" },
+        "fullName": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Laki-laki", "Perempuan"] },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "subjectIds": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["nip", "fullName", "gender", "status"]
+    },
+    "Class": {
+      "title": "Kelas (Class)",
+      "description": "Master data for school classes",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "grade": { "type": "string", "enum": ["X", "XI", "XII"] },
+        "majorId": { "type": "string" },
+        "homeroomTeacherId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "grade", "majorId", "academicYear", "status"]
+    },
+    "Student": {
+      "title": "Siswa (Student)",
+      "description": "Master data for enrolled students",
+      "type": "object",
+      "properties": {
+        "nis": { "type": "string" },
+        "nisn": { "type": "string" },
+        "fullName": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Laki-laki", "Perempuan"] },
+        "birthPlace": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "classId": { "type": "string" },
+        "majorId": { "type": "string" },
+        "enrollmentYear": { "type": "string" },
+        "status": { "type": "string", "enum": ["Aktif", "Lulus", "Pindah", "Nonaktif"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["nis", "nisn", "fullName", "gender", "classId", "majorId", "status"]
+    },
+    "Company": {
+      "title": "Mitra Industri / Perusahaan (Company)",
+      "description": "Partner companies for PKL and recruitment",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "industryType": { "type": "string" },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "website": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "quota": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "industryType", "city", "status"]
+    },
+    "Internship": {
+      "title": "Penempatan Siswa PKL (Internship)",
+      "description": "Internship placement mapping between students, companies and supervisor teachers",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "companyId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "industrySupervisor": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["Belum Mulai", "Aktif", "Selesai", "Dibatalkan"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["studentId", "companyId", "teacherId", "startDate", "endDate", "status"]
+    },
+    "InternshipJournal": {
+      "title": "Jurnal Harian PKL (Internship Journal)",
+      "description": "Daily student internship activity log and teacher verification",
+      "type": "object",
+      "properties": {
+        "internshipId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "date": { "type": "string" },
+        "activity": { "type": "string" },
+        "description": { "type": "string" },
+        "attachment": { "type": "string" },
+        "status": { "type": "string", "enum": ["Menunggu Verifikasi", "Disetujui", "Perlu Perbaikan"] },
+        "teacherNotes": { "type": "string" }
+      },
+      "required": ["internshipId", "studentId", "date", "activity", "status"]
+    },
+    "InternshipMonitoring": {
+      "title": "Monitoring PKL (Internship Monitoring)",
+      "description": "Teacher on-site visit and monitoring notes",
+      "type": "object",
+      "properties": {
+        "internshipId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "visitDate": { "type": "string" },
+        "notes": { "type": "string" },
+        "evaluation": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["internshipId", "studentId", "teacherId", "visitDate", "evaluation"]
+    },
+    "InternshipGrade": {
+      "title": "Nilai PKL (Internship Grade)",
+      "description": "Final weighted evaluation for student internship",
+      "type": "object",
+      "properties": {
+        "internshipId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "industryScore": { "type": "number" },
+        "teacherScore": { "type": "number" },
+        "finalScore": { "type": "number" },
+        "predicate": { "type": "string" },
+        "isPublished": { "type": "boolean" }
+      },
+      "required": ["internshipId", "studentId", "finalScore", "predicate"]
+    },
+    "Job": {
+      "title": "Lowongan Kerja BKK (Job)",
+      "description": "Career center job vacancies published by school partners",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string" },
+        "position": { "type": "string" },
+        "description": { "type": "string" },
+        "requirements": { "type": "string" },
+        "location": { "type": "string" },
+        "employmentType": { "type": "string", "enum": ["Full Time", "Part Time", "Kontrak", "Magang"] },
+        "salaryInfo": { "type": "string" },
+        "deadline": { "type": "string" },
+        "status": { "type": "string", "enum": ["Draft", "Published", "Closed"] }
+      },
+      "required": ["position", "companyId", "deadline", "status"]
+    },
+    "JobApplication": {
+      "title": "Lamaran Kerja BKK (Job Application)",
+      "description": "Recruitment applicant submissions and selection status",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "applicantName": { "type": "string" },
+        "applicantEmail": { "type": "string" },
+        "applicantPhone": { "type": "string" },
+        "cvUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["Terdaftar", "Seleksi", "Lolos", "Tidak Lolos", "Dibatalkan"] }
+      },
+      "required": ["jobId", "applicantName", "applicantEmail", "status"]
+    },
+    "Alumni": {
+      "title": "Data Alumni",
+      "description": "Alumni directory, current occupation and career highlights",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "graduationYear": { "type": "string" },
+        "majorId": { "type": "string" },
+        "email": { "type": "string" },
+        "city": { "type": "string" },
+        "status": { "type": "string", "enum": ["Bekerja", "Kuliah", "Wirausaha", "Mencari Kerja", "Lainnya"] },
+        "currentJob": { "type": "string" },
+        "currentCompany": { "type": "string" }
+      },
+      "required": ["name", "graduationYear", "majorId", "status"]
+    },
+    "TracerSurvey": {
+      "title": "Tracer Study Survey",
+      "description": "Questionnaire survey for vocational alumni tracking",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "questions": { "type": "array" }
+      },
+      "required": ["title", "isActive", "questions"]
+    },
+    "TracerResponse": {
+      "title": "Tracer Study Response",
+      "description": "Alumni responses to tracer study questionnaire",
+      "type": "object",
+      "properties": {
+        "surveyId": { "type": "string" },
+        "alumniId": { "type": "string" },
+        "alumniName": { "type": "string" },
+        "graduationYear": { "type": "string" },
+        "answers": { "type": "object" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["surveyId", "alumniName", "graduationYear", "answers"]
+    },
+    "UserAccount": {
+      "title": "User Account & Role (RBAC)",
+      "description": "Authenticated user accounts with system roles",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "guru", "siswa", "kepala_sekolah", "tu", "bkk"] },
+        "status": { "type": "string", "enum": ["Aktif", "Nonaktif"] },
+        "phone": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "lastLoginAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "displayName", "role", "status"]
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Security audit trail for data operations and exports",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userRole": { "type": "string" },
+        "action": { "type": "string", "enum": ["CREATE", "UPDATE", "DELETE", "LOGIN", "EXPORT", "PRINT", "SETTINGS"] },
+        "module": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetName": { "type": "string" },
+        "description": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userEmail", "action", "module", "description", "createdAt"]
+    }
+  }
+}

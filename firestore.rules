@@ -1,0 +1,210 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================================================
+    // HELPER FUNCTIONS & AUTH CONTEXT
+    // ========================================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'official.smkpgri.kromengan@gmail.com' ||
+        (request.auth.token.role != null && request.auth.token.role == 'admin') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin')
+      );
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        (request.auth.token.role != null && request.auth.token.role in ['guru', 'kepala_sekolah', 'tu', 'bkk']) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role in ['guru', 'kepala_sekolah', 'tu', 'bkk'])
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ========================================================================
+    // 1. PUBLIC WEBSITE & PROFILE
+    // ========================================================================
+    
+    match /school_info/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /programs/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /achievements/{achievementId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /gallery/{galleryId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // 2. MASTER DATA (AKADEMIK)
+    // ========================================================================
+    
+    match /majors/{majorId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /classes/{classId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /students/{studentId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /academic_years/{yearId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /grades/{gradeId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // 3. PKL (PRAKTIK KERJA LAPANGAN)
+    // ========================================================================
+    
+    match /companies/{companyId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /internships/{internshipId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /internship_journals/{journalId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /internship_monitoring/{monitoringId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /internship_grades/{gradeId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // 4. BKK & LOWONGAN KERJA
+    // ========================================================================
+    
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /job_applications/{applicationId} {
+      allow read: if true;
+      allow create: if true; // Siswa/alumni can submit job applications
+      allow update, delete: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // 5. ALUMNI & TRACER STUDY
+    // ========================================================================
+    
+    match /alumni/{alumniId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /tracer_surveys/{surveyId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /tracer_responses/{responseId} {
+      allow read: if true;
+      allow create: if true; // Alumni can submit tracer study survey responses
+      allow update, delete: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // 6. CONTACT MESSAGES, AUDIT LOGS & USERS
+    // ========================================================================
+    
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if true; // Public contact form
+      allow update, delete: if isAuthenticated();
+    }
+
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}
