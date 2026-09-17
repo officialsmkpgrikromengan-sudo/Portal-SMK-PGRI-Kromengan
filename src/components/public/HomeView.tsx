@@ -26,12 +26,15 @@ import {
   EventItem, 
   AchievementItem, 
   GalleryItem, 
-  NavigationPage 
+  NavigationPage,
+  MajorItem
 } from '../../types';
 import { SectionHeading } from '../common/SectionHeading';
+import { getActiveVocationalPrograms } from '../../utils/majorsSync';
 
 interface HomeViewProps {
   schoolInfo: SchoolInfo;
+  majorsList?: MajorItem[];
   newsList: NewsItem[];
   eventsList: EventItem[];
   achievementsList: AchievementItem[];
@@ -43,6 +46,7 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({
   schoolInfo,
+  majorsList,
   newsList,
   eventsList,
   achievementsList,
@@ -51,6 +55,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectNews,
   onSelectEvent
 }) => {
+  const programs = majorsList && majorsList.length > 0
+    ? getActiveVocationalPrograms(majorsList, schoolInfo.programs)
+    : (schoolInfo.programs || []);
   const publishedNews = newsList.filter(n => n.status === 'published').slice(0, 3);
   const upcomingEvents = eventsList
     .filter(e => e.status === 'published')
@@ -266,7 +273,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             <div className="space-y-1 pt-3 sm:pt-0 sm:pl-4">
               <div className="text-2xl sm:text-3xl font-black text-slate-900">
-                {schoolInfo.stats.majors}
+                {programs.length || schoolInfo.stats.majors}
               </div>
               <div className="text-xs font-medium text-slate-500">
                 Program Keahlian
@@ -306,7 +313,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {schoolInfo.programs?.map((prog, idx) => {
+          {programs.map((prog, idx) => {
             const badge = getProgramBadgeStyle(prog.code, idx);
             return (
               <div

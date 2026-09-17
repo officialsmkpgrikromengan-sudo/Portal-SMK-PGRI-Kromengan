@@ -13,10 +13,12 @@ import {
   ShieldCheck,
   Award
 } from 'lucide-react';
-import { SchoolInfo, NavigationPage } from '../../types';
+import { SchoolInfo, NavigationPage, MajorItem } from '../../types';
+import { getActiveVocationalPrograms } from '../../utils/majorsSync';
 
 interface FooterProps {
   schoolInfo: SchoolInfo;
+  majorsList?: MajorItem[];
   onNavigate: (page: NavigationPage) => void;
   onOpenAdmin: () => void;
   onOpenLoginModal?: (role?: 'siswa' | 'guru' | 'bkk' | 'admin') => void;
@@ -24,10 +26,14 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ 
   schoolInfo, 
+  majorsList,
   onNavigate, 
   onOpenAdmin,
   onOpenLoginModal 
 }) => {
+  const programs = majorsList && majorsList.length > 0
+    ? getActiveVocationalPrograms(majorsList, schoolInfo.programs)
+    : (schoolInfo.programs || []);
   return (
     <footer id="main-footer" className="bg-slate-900 text-white border-t border-slate-800">
       {/* Main footer content */}
@@ -36,9 +42,17 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Col 1: Identity & Speech quote (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-900 border border-blue-700 text-white flex items-center justify-center font-black text-xl shrink-0">
-                S
-              </div>
+              {schoolInfo.logoUrl ? (
+                <img
+                  src={schoolInfo.logoUrl}
+                  alt={schoolInfo.name}
+                  className="w-10 h-10 rounded-lg object-contain bg-white border border-slate-700 p-0.5 shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-blue-900 border border-blue-700 text-white flex items-center justify-center font-black text-xl shrink-0">
+                  <img src="/favicon.svg" alt="Emblem" className="w-7 h-7 object-contain" />
+                </div>
+              )}
               <div>
                 <h3 className="text-base font-bold text-white uppercase tracking-tight leading-tight">
                   {schoolInfo.name}
@@ -184,7 +198,7 @@ export const Footer: React.FC<FooterProps> = ({
               Program Jurusan
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
-              {schoolInfo.programs?.map((p) => (
+              {programs.map((p) => (
                 <li key={p.id}>
                   <button
                     onClick={() => onNavigate('programs')}

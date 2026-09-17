@@ -50,6 +50,7 @@ export interface SchoolInfo {
   name: string;
   tagline: string;
   motto?: string;
+  logoUrl?: string;
   npsn: string;
   accreditation: string;
   headmasterName: string;
@@ -444,6 +445,13 @@ export interface ScheduleItem {
   status: ScheduleStatus;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface ScheduleConflictResult {
+  hasConflict: boolean;
+  conflictType?: 'teacher' | 'class' | 'room';
+  conflictMessage?: string;
+  conflictingSchedule?: ScheduleItem;
 }
 
 // 3. Absensi Siswa (Attendance)

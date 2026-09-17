@@ -29,9 +29,10 @@ import {
 } from '../types';
 
 export const defaultSchoolInfo: SchoolInfo = {
-  name: 'SMK PGRI Teladan Nusantara',
+  name: 'SMK PGRI Kromengan',
   tagline: 'Mencetak Generasi Unggul, Berkarakter, Kompeten & Siap Kerja di Era Digital',
   motto: 'UNGGUL • BERAKHLAK • KOMPETEN',
+  logoUrl: '/favicon.svg',
   npsn: '20512345',
   accreditation: 'A (Unggul)',
   headmasterName: 'Drs. H. Bambang Sudarsono, M.Pd.',

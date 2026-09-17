@@ -1608,31 +1608,31 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Server className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-slate-900 text-sm">Status Infrastruktur Backend (Google Cloud Firestore)</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Status Infrastruktur Backend (SQLite Database Tunggal)</h3>
               </div>
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Terhubung Real-time</span>
+                <span>Terhubung Aktif (Local Engine)</span>
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Database Provider</span>
-                <span className="font-extrabold text-slate-900 mt-0.5 block">Google Cloud Firestore</span>
-                <span className="text-[11px] text-slate-500">NoSQL Document Store</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Database Engine</span>
+                <span className="font-extrabold text-slate-900 mt-0.5 block">SQLite 3 (Database Tunggal)</span>
+                <span className="text-[11px] text-slate-500">ACID Compliant Relational Store</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Sistem Autentikasi</span>
-                <span className="font-extrabold text-slate-900 mt-0.5 block">Firebase Auth</span>
-                <span className="text-[11px] text-slate-500">Email/Password & Google Sign-In</span>
+                <span className="font-extrabold text-slate-900 mt-0.5 block">Role-Based Auth (Scrypt Hashed)</span>
+                <span className="text-[11px] text-slate-500">Siswa, Guru, BKK, Admin & Google</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Project ID Cloud</span>
-                <span className="font-extrabold text-slate-900 mt-0.5 block truncate">ai-studio-a065f270...</span>
-                <span className="text-[11px] text-slate-500">Kredensial Aman</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Berkas Database Fisik</span>
+                <span className="font-extrabold text-slate-900 mt-0.5 block truncate">data/school.sqlite</span>
+                <span className="text-[11px] text-slate-500">Penyimpanan Terpadu & Terenkripsi</span>
               </div>
             </div>
           </div>
@@ -1642,9 +1642,9 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Database className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900 text-sm">Ringkasan Data Tersimpan di Firestore</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Ringkasan Data Tersimpan di SQLite</h3>
               </div>
-              <span className="text-xs text-slate-400 font-semibold">12 Koleksi Utama</span>
+              <span className="text-xs text-slate-400 font-semibold">26 Tabel Relasional Utama</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -1734,7 +1734,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
       <ConfirmDialog
         isOpen={showSeedConfirm}
         title="Isi Ulang Data Demo Resmi"
-        message="Tindakan ini akan mengunggah dan memperbarui seluruh koleksi data resmi (Siswa, Guru, Jadwal, Nilai, Berita, dan Agenda) di database Firestore Anda. Lanjutkan?"
+        message="Tindakan ini akan mengunggah dan memperbarui seluruh koleksi data resmi (Siswa, Guru, Jadwal, Nilai, Berita, dan Agenda) di database SQLite Anda. Lanjutkan?"
         confirmLabel="Ya, Mulai Inisialisasi Data"
         cancelLabel="Batal"
         variant="warning"

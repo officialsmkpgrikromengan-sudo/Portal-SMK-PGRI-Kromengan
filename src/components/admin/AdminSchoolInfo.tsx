@@ -145,7 +145,42 @@ export const AdminSchoolInfo: React.FC<AdminSchoolInfoProps> = ({
       <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
         {/* TAB 1: GENERAL */}
         {activeTab === 'general' && (
-          <div className="space-y-4 animate-in fade-in">
+          <div className="space-y-6 animate-in fade-in">
+            {/* Logo Sekolah & Favicon Configuration Section */}
+            <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-blue-950 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span>Logo Resmi Sekolah & Favicon Browser</span>
+                  </h4>
+                  <p className="text-xs text-blue-800/80 mt-1 leading-relaxed">
+                    Logo yang Anda atur atau unggah di sini akan langsung diterapkan secara instan sebagai <strong>Favicon (ikon tab browser)</strong>, logo bilah navigasi (Navbar), header, dan footer website.
+                  </p>
+                </div>
+
+                {/* Live Favicon Preview Pill */}
+                <div className="hidden sm:flex flex-col items-center bg-white px-3.5 py-2 rounded-xl border border-blue-200 shadow-xs shrink-0">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Preview Favicon Tab</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200">
+                    {formData.logoUrl ? (
+                      <img src={formData.logoUrl} alt="Favicon Preview" className="w-4 h-4 object-contain" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full bg-blue-900 text-white text-[9px] font-bold flex items-center justify-center">S</div>
+                    )}
+                    <span className="text-[11px] font-semibold text-slate-700 max-w-[110px] truncate">{formData.name}</span>
+                  </div>
+                </div>
+              </div>
+
+              <ImageUploadInput
+                label="Unggah Berkas Logo / Favicon Baru (PNG, JPG, SVG, WebP)"
+                value={formData.logoUrl || ''}
+                onChange={(val) => setFormData({ ...formData, logoUrl: val })}
+                placeholder="https://... atau unggah berkas logo sekolah"
+              />
+            </div>
+
             <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Identitas & Akreditasi Lembaga</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

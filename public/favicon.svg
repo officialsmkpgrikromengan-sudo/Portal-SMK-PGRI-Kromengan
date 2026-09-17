@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Outer Shield Background -->
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield Shape -->
+  <path d="M32 4L10 12V28C10 44 20 54 32 60C44 54 54 44 54 28V12L32 4Z" fill="url(#shieldGrad)" stroke="url(#goldGrad)" stroke-width="2.5" />
+  
+  <!-- Inner Border Line -->
+  <path d="M32 8L14 15V27C14 41 22 49 32 54C42 49 50 41 50 27V15L32 8Z" stroke="#fcd34d" stroke-width="1" stroke-opacity="0.4" fill="none" />
+
+  <!-- Gear Wheel (Kejuruan/Vokasi) -->
+  <circle cx="32" cy="27" r="10" stroke="url(#goldGrad)" stroke-width="2" stroke-dasharray="3.5 2.5" fill="none" />
+  
+  <!-- Open Book (Pendidikan & Ilmu) -->
+  <path d="M22 36C26 34 29 35 32 37C35 35 38 34 42 36V44C38 42 35 43 32 45C29 43 26 42 22 44V36Z" fill="#ffffff" fill-opacity="0.95" />
+  <path d="M32 37V45" stroke="#1e3a8a" stroke-width="1.5" />
+  
+  <!-- Central Torch Flame (Semangat PGRI) -->
+  <path d="M32 18C33.5 21 35 23 35 25C35 26.65 33.65 28 32 28C30.35 28 29 26.65 29 25C29 23 30.5 21 32 18Z" fill="url(#goldGrad)" />
+  <circle cx="32" cy="25" r="1.5" fill="#ef4444" />
+</svg>

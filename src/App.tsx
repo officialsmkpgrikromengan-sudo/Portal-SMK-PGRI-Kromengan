@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { syncSchoolInfoWithMajors } from './utils/majorsSync';
 import { 
   SchoolInfo, 
   NewsItem, 
@@ -214,7 +215,56 @@ export function App() {
 
   const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
 
-  // Fetch all data from Firestore
+  // Synchronize schoolInfo programs & stats with Master Majors configured by Admin
+  const syncedSchoolInfo = useMemo(() => {
+    return syncSchoolInfoWithMajors(schoolInfo, majorsList);
+  }, [schoolInfo, majorsList]);
+
+  // Dynamically synchronize Browser Favicon when school logo is loaded or updated
+  useEffect(() => {
+    const logo = syncedSchoolInfo?.logoUrl;
+    if (logo) {
+      const favEl = document.getElementById('app-favicon') as HTMLLinkElement | null;
+      if (favEl) {
+        favEl.href = logo;
+      }
+      const appleEl = document.getElementById('app-apple-icon') as HTMLLinkElement | null;
+      if (appleEl) {
+        appleEl.href = logo;
+      }
+    }
+  }, [syncedSchoolInfo?.logoUrl]);
+
+  // Dynamically update document title for SEO & smooth UX
+  useEffect(() => {
+    const schoolName = syncedSchoolInfo?.name || 'SMK PGRI Kromengan';
+    if (inAdminMode) {
+      document.title = `Admin Dashboard CMS | ${schoolName}`;
+    } else if (inPortalMode && user) {
+      if (role === 'guru') {
+        document.title = `Portal Guru & Tendik | ${schoolName}`;
+      } else if (role === 'bkk') {
+        document.title = `Portal Bursa Kerja Khusus BKK | ${schoolName}`;
+      } else {
+        document.title = `Portal Siswa & Akademik | ${schoolName}`;
+      }
+    } else {
+      const pageTitleMap: Record<NavigationPage, string> = {
+        home: `${schoolName} – Portal Resmi Sekolah & Sistem Akademik`,
+        profile: `Profil & Sejarah Sekolah | ${schoolName}`,
+        programs: `Program Keahlian & Jurusan Vokasi | ${schoolName}`,
+        news: `Berita & Pengumuman Sekolah | ${schoolName}`,
+        events: `Agenda & Kegiatan Sekolah | ${schoolName}`,
+        achievements: `Prestasi Siswa & Lembaga | ${schoolName}`,
+        gallery: `Galeri Foto & Dokumentasi | ${schoolName}`,
+        career: `Pusat Karir BKK & Tracer Study Alumni | ${schoolName}`,
+        contact: `Kontak & Lokasi Kampus | ${schoolName}`
+      };
+      document.title = pageTitleMap[currentPage] || `${schoolName} – Portal Resmi Sekolah`;
+    }
+  }, [inAdminMode, inPortalMode, user, role, currentPage, syncedSchoolInfo?.name]);
+
+  // Fetch all data from SQLite database
   const loadAllData = async () => {
     try {
       setIsLoadingData(true);
@@ -809,14 +859,15 @@ export function App() {
           setIsLoginModalOpen(true);
         }}
         onOpenUserPortal={() => setInPortalMode(true)}
-        schoolInfo={schoolInfo}
+        schoolInfo={syncedSchoolInfo}
       />
 
       {/* Main Public Page Content */}
       <main className="flex-1">
         {currentPage === 'home' && (
           <HomeView
-            schoolInfo={schoolInfo}
+            schoolInfo={syncedSchoolInfo}
+            majorsList={majorsList}
             newsList={newsList}
             eventsList={eventsList}
             achievementsList={achievementsList}
@@ -828,12 +879,13 @@ export function App() {
         )}
 
         {currentPage === 'profile' && (
-          <ProfileView schoolInfo={schoolInfo} />
+          <ProfileView schoolInfo={syncedSchoolInfo} />
         )}
 
         {currentPage === 'programs' && (
           <ProgramsView
-            schoolInfo={schoolInfo}
+            schoolInfo={syncedSchoolInfo}
+            majorsList={majorsList}
             onNavigate={handleNavigatePage}
           />
         )}
@@ -874,13 +926,14 @@ export function App() {
         )}
 
         {currentPage === 'contact' && (
-          <ContactView schoolInfo={schoolInfo} />
+          <ContactView schoolInfo={syncedSchoolInfo} />
         )}
       </main>
 
       {/* Public Footer */}
       <Footer
-        schoolInfo={schoolInfo}
+        schoolInfo={syncedSchoolInfo}
+        majorsList={majorsList}
         onNavigate={handleNavigatePage}
         onOpenAdmin={() => setInAdminMode(true)}
         onOpenLoginModal={(initialRole) => {

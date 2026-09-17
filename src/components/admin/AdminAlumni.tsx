@@ -21,7 +21,8 @@ import {
   Download,
   Calendar,
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RotateCcw
 } from 'lucide-react';
 import { 
   AlumniItem, 
@@ -30,12 +31,14 @@ import {
   MajorItem, 
   AdminSection 
 } from '../../types';
+import { defaultTracerSurveysList } from '../../data/defaultData';
 import { 
   addAlumni, 
   updateAlumni, 
   deleteAlumni,
   saveTracerSurvey,
-  submitTracerResponse
+  submitTracerResponse,
+  resetTracerSurveyToDefault
 } from '../../lib/firebase';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -458,47 +461,73 @@ export const AdminAlumni: React.FC<AdminAlumniProps> = ({
                   <h3 className="text-base font-extrabold text-slate-900">{survey.title}</h3>
                   <p className="text-xs text-slate-500">{survey.description}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold w-fit ${
-                  survey.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {survey.isActive ? 'Kuesioner Aktif' : 'Nonaktif'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await resetTracerSurveyToDefault(survey.id);
+                        success('Kuesioner Tracer Study berhasil diperbarui ke 6 soal standar Kemendikbudristek!');
+                        onRefresh();
+                      } catch (e) {
+                        error('Gagal memperbarui kuesioner.');
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+                    title="Muat ulang 6 pertanyaan standar resmi tracer study"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Reset 6 Soal Standar</span>
+                  </button>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold w-fit ${
+                    survey.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {survey.isActive ? 'Kuesioner Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
               </div>
 
               {/* Questions preview */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-700">Daftar Pertanyaan Kuesioner:</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-700">Daftar Pertanyaan Kuesioner (6 Soal Resmi):</h4>
+                  <span className="text-[11px] text-slate-500">Standar Instrumen Penelusuran Lulusan Vokasi</span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {survey.questions.map((q, idx) => (
-                    <div key={q.id || idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="font-bold text-slate-800 block">
-                          {idx + 1}. {q.question || q.text || `Pertanyaan ${idx + 1}`}
-                          {q.required && <span className="text-rose-500 ml-1">*</span>}
-                        </span>
-                        {q.category && (
-                          <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">
-                            {q.category}
+                  {(survey.questions && survey.questions.length > 0 ? survey.questions : defaultTracerSurveysList[0].questions).map((q, idx) => {
+                    const defaultQ = defaultTracerSurveysList[0]?.questions[idx];
+                    const questionText = q.question?.trim() || q.text?.trim() || defaultQ?.question || defaultQ?.text || `Pertanyaan ${idx + 1}`;
+                    return (
+                      <div key={q.id || idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-slate-800 block">
+                            {idx + 1}. {questionText}
+                            {q.required && <span className="text-rose-500 ml-1">*</span>}
                           </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-500">
-                        <span className="text-indigo-600 font-semibold">Tipe: {q.type}</span>
-                        {q.options && q.options.length > 0 && (
-                          <span className="text-slate-400">{q.options.length} Pilihan Opsi</span>
-                        )}
-                      </div>
-                      {q.options && q.options.length > 0 && (
-                        <div className="pt-1 flex flex-wrap gap-1">
-                          {q.options.map((opt, oIdx) => (
-                            <span key={oIdx} className="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                              {opt}
+                          {(q.category || defaultQ?.category) && (
+                            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">
+                              {q.category || defaultQ?.category}
                             </span>
-                          ))}
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="text-indigo-600 font-semibold">Tipe: {q.type || defaultQ?.type}</span>
+                          {(q.options || defaultQ?.options) && (
+                            <span className="text-slate-400">{(q.options || defaultQ?.options)?.length} Pilihan Opsi</span>
+                          )}
+                        </div>
+                        {(q.options || defaultQ?.options) && (
+                          <div className="pt-1 flex flex-wrap gap-1">
+                            {(q.options || defaultQ?.options)?.map((opt: string, oIdx: number) => (
+                              <span key={oIdx} className="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                                {opt}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -12,17 +12,23 @@ import {
   ArrowRight,
   UserCheck
 } from 'lucide-react';
-import { VocationalProgram, SchoolInfo, NavigationPage } from '../../types';
+import { VocationalProgram, SchoolInfo, NavigationPage, MajorItem } from '../../types';
 import { SectionHeading } from '../common/SectionHeading';
+import { getActiveVocationalPrograms } from '../../utils/majorsSync';
 
 interface ProgramsViewProps {
   schoolInfo: SchoolInfo;
+  majorsList?: MajorItem[];
   onNavigate: (page: NavigationPage) => void;
 }
 
-export const ProgramsView: React.FC<ProgramsViewProps> = ({ schoolInfo, onNavigate }) => {
+export const ProgramsView: React.FC<ProgramsViewProps> = ({ schoolInfo, majorsList, onNavigate }) => {
+  const programs = majorsList && majorsList.length > 0
+    ? getActiveVocationalPrograms(majorsList, schoolInfo?.programs)
+    : (schoolInfo?.programs || []);
+
   const [selectedProgram, setSelectedProgram] = useState<string>(
-    schoolInfo.programs && schoolInfo.programs.length > 0 ? schoolInfo.programs[0].id : ''
+    programs && programs.length > 0 ? programs[0].id : ''
   );
 
   const getProgramIcon = (iconName: string) => {
@@ -36,7 +42,6 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ schoolInfo, onNaviga
     }
   };
 
-  const programs = schoolInfo?.programs || [];
   const activeProg = programs.find(p => p.id === selectedProgram) || programs[0];
 
   return (
@@ -59,8 +64,8 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ schoolInfo, onNaviga
       {/* Program Selector Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {schoolInfo.programs?.map((program) => {
-            const isSelected = selectedProgram === program.id;
+          {programs.map((program) => {
+            const isSelected = activeProg?.id === program.id;
             return (
               <button
                 key={program.id}

@@ -32,6 +32,7 @@ import {
   TracerSurvey, 
   MajorItem 
 } from '../../types';
+import { defaultTracerSurveysList } from '../../data/defaultData';
 import { applyForJob, submitTracerResponse } from '../../lib/firebase';
 import { useToast } from '../../context/ToastContext';
 
@@ -558,20 +559,27 @@ export const CareerView: React.FC<CareerViewProps> = ({
                 </div>
 
                 {/* Questions */}
-                {((tracerSurveysList.find(s => s.isActive) || tracerSurveysList[0])?.questions || []).map((q, idx) => {
-                  const questionText = q.question || q.text || `Pertanyaan ${idx + 1}`;
-                  return (
-                    <div key={q.id || idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <label className="font-extrabold text-slate-800 block text-xs sm:text-sm">
-                          {idx + 1}. {questionText} {q.required && <span className="text-rose-500">*</span>}
-                        </label>
-                        {q.category && (
-                          <span className="text-[10px] bg-blue-100/80 text-blue-800 px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-                            {q.category}
-                          </span>
-                        )}
-                      </div>
+                {(() => {
+                  const activeSurvey = tracerSurveysList.find(s => s.isActive) || tracerSurveysList[0] || defaultTracerSurveysList[0];
+                  const surveyQuestions = (activeSurvey?.questions && activeSurvey.questions.length > 0)
+                    ? activeSurvey.questions
+                    : defaultTracerSurveysList[0].questions;
+
+                  return surveyQuestions.map((q, idx) => {
+                    const defaultQ = defaultTracerSurveysList[0]?.questions[idx];
+                    const questionText = q.question?.trim() || q.text?.trim() || defaultQ?.question || defaultQ?.text || `Pertanyaan ${idx + 1}`;
+                    return (
+                      <div key={q.id || idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <label className="font-extrabold text-slate-800 block text-xs sm:text-sm">
+                            {idx + 1}. {questionText} {q.required && <span className="text-rose-500">*</span>}
+                          </label>
+                          {(q.category || defaultQ?.category) && (
+                            <span className="text-[10px] bg-blue-100/80 text-blue-800 px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap">
+                              {q.category || defaultQ?.category}
+                            </span>
+                          )}
+                        </div>
 
                       {q.type === 'single_choice' && q.options && (
                         <div className="space-y-2 pt-1">
@@ -642,7 +650,8 @@ export const CareerView: React.FC<CareerViewProps> = ({
                       )}
                     </div>
                   );
-                })}
+                });
+              })()}
 
                 <button
                   type="submit"

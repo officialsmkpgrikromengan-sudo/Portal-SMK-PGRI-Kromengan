@@ -49,12 +49,22 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
     shortName: string;
     description: string;
     status: MajorStatus;
+    headOfProgram: string;
+    imageUrl: string;
+    iconName: string;
+    competencies: string;
+    jobProspects: string;
   }>({
     code: '',
     name: '',
     shortName: '',
     description: '',
-    status: 'Aktif'
+    status: 'Aktif',
+    headOfProgram: '',
+    imageUrl: '',
+    iconName: 'Code',
+    competencies: '',
+    jobProspects: ''
   });
 
   const handleOpenCreate = () => {
@@ -64,7 +74,12 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
       name: '',
       shortName: '',
       description: '',
-      status: 'Aktif'
+      status: 'Aktif',
+      headOfProgram: '',
+      imageUrl: '',
+      iconName: 'Code',
+      competencies: '',
+      jobProspects: ''
     });
     setIsModalOpen(true);
   };
@@ -76,7 +91,12 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
       name: item.name,
       shortName: item.shortName || item.code,
       description: item.description || '',
-      status: item.status
+      status: item.status,
+      headOfProgram: item.headOfProgram || '',
+      imageUrl: item.imageUrl || '',
+      iconName: item.iconName || 'Code',
+      competencies: (item.competencies || []).join('\n'),
+      jobProspects: (item.jobProspects || []).join('\n')
     });
     setIsModalOpen(true);
   };
@@ -93,26 +113,37 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
       return;
     }
 
+    const compList = formData.competencies
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    const prospectsList = formData.jobProspects
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    const payload = {
+      code: formData.code.toUpperCase().trim(),
+      name: formData.name.trim(),
+      shortName: formData.shortName.toUpperCase().trim() || formData.code.toUpperCase().trim(),
+      description: formData.description.trim(),
+      status: formData.status,
+      headOfProgram: formData.headOfProgram.trim(),
+      imageUrl: formData.imageUrl.trim() || undefined,
+      iconName: formData.iconName.trim() || 'Code',
+      competencies: compList.length > 0 ? compList : undefined,
+      jobProspects: prospectsList.length > 0 ? prospectsList : undefined
+    };
+
     try {
       setIsSubmitting(true);
       if (editingItem) {
-        await updateMajor(editingItem.id, {
-          code: formData.code.toUpperCase().trim(),
-          name: formData.name.trim(),
-          shortName: formData.shortName.toUpperCase().trim() || formData.code.toUpperCase().trim(),
-          description: formData.description.trim(),
-          status: formData.status
-        });
-        success('Data Program Keahlian berhasil diperbarui!');
+        await updateMajor(editingItem.id, payload);
+        success('Data Program Keahlian berhasil diperbarui dan tersinkronisasi ke web publik!');
       } else {
-        await createMajor({
-          code: formData.code.toUpperCase().trim(),
-          name: formData.name.trim(),
-          shortName: formData.shortName.toUpperCase().trim() || formData.code.toUpperCase().trim(),
-          description: formData.description.trim(),
-          status: formData.status
-        });
-        success('Program Keahlian baru berhasil ditambahkan!');
+        await createMajor(payload);
+        success('Program Keahlian baru berhasil ditambahkan dan tampil di web publik!');
       }
       handleCloseModal();
       onRefresh();
@@ -399,7 +430,15 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {/* SYNC NOTIFICATION BANNER */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
+                <div className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-1.5 animate-pulse" />
+                <div className="leading-relaxed">
+                  <strong className="font-bold">Sinkronisasi Otomatis Web Publik Aktif:</strong> Perubahan nama, kode, status, deskripsi, dan profil jurusan di sini akan langsung tampil secara real-time di <strong>Beranda</strong>, <strong>Halaman Program Keahlian</strong>, dan <strong>Footer</strong>.
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -444,6 +483,47 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
                 />
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Ketua Program Keahlian (Kaprog)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Rian Pratama, S.Kom."
+                    value={formData.headOfProgram}
+                    onChange={(e) => setFormData(prev => ({ ...prev, headOfProgram: e.target.value }))}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Status Program Keahlian
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as MajorStatus }))}
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white"
+                  >
+                    <option value="Aktif">Aktif (Tampil di web publik & data akademik)</option>
+                    <option value="Nonaktif">Nonaktif (Diarsipkan & disembunyikan)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  URL Foto / Banner Fasilitas Jurusan
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/... (opsional)"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Deskripsi Singkat Kejuruan
@@ -457,18 +537,31 @@ export const AdminMajors: React.FC<AdminMajorsProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Status Program Keahlian
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as MajorStatus }))}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white"
-                >
-                  <option value="Aktif">Aktif (Dapat dipilih pada data siswa & kelas)</option>
-                  <option value="Nonaktif">Nonaktif (Diarsipkan)</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kompetensi Utama (1 per baris)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Contoh:&#10;Pemrograman Web & Mobile&#10;Basis Data Relasional&#10;Sertifikasi BNSP"
+                    value={formData.competencies}
+                    onChange={(e) => setFormData(prev => ({ ...prev, competencies: e.target.value }))}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Prospek Karir Lulusan (1 per baris)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Contoh:&#10;Junior Software Developer&#10;Database Administrator&#10;Wirausaha Startup Teknologi"
+                    value={formData.jobProspects}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobProspects: e.target.value }))}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">

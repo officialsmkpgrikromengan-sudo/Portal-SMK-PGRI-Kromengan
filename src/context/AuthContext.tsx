@@ -1,17 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { 
-  User, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  updateProfile as firebaseUpdateProfile,
-  updatePassword as firebaseUpdatePassword,
-  sendPasswordResetEmail as firebaseSendPasswordResetEmail
-} from 'firebase/auth';
-import { auth, getUsers, getStudentsList, getTeachersList, logAuditEvent } from '../lib/firebase';
+import { getUsers, getStudentsList, getTeachersList, logAuditEvent } from '../lib/api';
 import { UserAccount, UserRole, StudentItem, TeacherItem } from '../types';
 import { defaultUsersList, defaultStudentsList, defaultTeachersList } from '../data/defaultData';
 
@@ -28,11 +16,11 @@ export interface AdminAuthUser {
 }
 
 interface AuthContextType {
-  user: User | AdminAuthUser | null;
+  user: AdminAuthUser | null;
   currentUserAccount: UserAccount | null;
   role: UserRole;
   loading: boolean;
-  loginWithGoogle: () => Promise<User | null>;
+  loginWithGoogle: () => Promise<AdminAuthUser | null>;
   login: (email: string, pass: string) => Promise<void>;
   loginWithRole: (identifier: string, pass: string, targetRole?: UserRole) => Promise<UserAccount>;
   loginAsDemoRole: (role: UserRole) => Promise<UserAccount>;
@@ -45,131 +33,154 @@ interface AuthContextType {
 }
 
 const LOCAL_USER_SESSION_KEY = 'smk_pgri_user_session';
-const LOCAL_ADMIN_KEY = 'smk_pgri_admin_session';
+const LOCAL_TOKEN_KEY = 'smk_pgri_auth_token';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | AdminAuthUser | null>(null);
+  const [user, setUser] = useState<AdminAuthUser | null>(null);
   const [currentUserAccount, setCurrentUserAccount] = useState<UserAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Derive role
   const role: UserRole = currentUserAccount?.role || 
-    (user as any)?.role || 
+    user?.role || 
     (user?.email === 'official.smkpgri.kromengan@gmail.com' ? 'admin' : 'public');
 
-  // Sync user profile from Firestore / default data when user is authenticated
-  const syncAccountData = async (userEmail: string | null, uid?: string) => {
-    try {
-      const allUsers = await getUsers();
-      const match = allUsers.find(u => 
-        (userEmail && u.email.toLowerCase() === userEmail.toLowerCase()) || 
-        (uid && u.id === uid)
-      );
-      if (match) {
-        setCurrentUserAccount(match);
-        localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(match));
-      } else if (userEmail === 'official.smkpgri.kromengan@gmail.com') {
-        const adminAcc = defaultUsersList.find(u => u.role === 'admin') || {
-          id: uid || 'user-admin-1',
-          email: userEmail,
-          displayName: 'Administrator Utama',
-          role: 'admin' as UserRole,
-          status: 'Aktif' as const,
-          createdAt: new Date().toISOString()
-        };
-        setCurrentUserAccount(adminAcc);
-        localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(adminAcc));
-      }
-    } catch (e) {
-      console.warn('Error syncing user account data:', e);
-    }
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        localStorage.removeItem(LOCAL_ADMIN_KEY);
-        await syncAccountData(currentUser.email, currentUser.uid);
-        setLoading(false);
-      } else {
-        // Check saved session in localStorage
-        const savedAccount = localStorage.getItem(LOCAL_USER_SESSION_KEY);
-        const savedAdmin = localStorage.getItem(LOCAL_ADMIN_KEY);
-        
-        if (savedAccount) {
-          try {
-            const parsedAccount: UserAccount = JSON.parse(savedAccount);
-            setCurrentUserAccount(parsedAccount);
-            setUser({
-              uid: parsedAccount.id,
-              email: parsedAccount.email,
-              displayName: parsedAccount.displayName,
-              photoURL: parsedAccount.photoUrl || null,
-              phone: parsedAccount.phone || null,
-              role: parsedAccount.role,
-              studentId: parsedAccount.studentId,
-              teacherId: parsedAccount.teacherId,
-              username: parsedAccount.username
-            });
-          } catch {
-            setCurrentUserAccount(null);
-            setUser(null);
-          }
-        } else if (savedAdmin) {
-          try {
-            const parsedAdmin = JSON.parse(savedAdmin);
-            setUser(parsedAdmin);
-            setCurrentUserAccount({
-              id: parsedAdmin.uid,
-              email: parsedAdmin.email || 'admin@smkpgri.sch.id',
-              displayName: parsedAdmin.displayName || 'Administrator',
-              role: 'admin',
-              status: 'Aktif',
-              createdAt: new Date().toISOString()
-            });
-          } catch {
-            setUser(null);
-            setCurrentUserAccount(null);
-          }
-        } else {
-          setUser(null);
-          setCurrentUserAccount(null);
-        }
-        setLoading(false);
+    // Check saved session in localStorage
+    const savedAccount = localStorage.getItem(LOCAL_USER_SESSION_KEY);
+    if (savedAccount) {
+      try {
+        const parsedAccount: UserAccount = JSON.parse(savedAccount);
+        setCurrentUserAccount(parsedAccount);
+        setUser({
+          uid: parsedAccount.id,
+          email: parsedAccount.email,
+          displayName: parsedAccount.displayName,
+          photoURL: parsedAccount.photoUrl || null,
+          phone: parsedAccount.phone || null,
+          role: parsedAccount.role,
+          studentId: parsedAccount.studentId,
+          teacherId: parsedAccount.teacherId,
+          username: parsedAccount.username
+        });
+      } catch {
+        setCurrentUserAccount(null);
+        setUser(null);
       }
-    });
-
-    return () => unsubscribe();
+    }
+    setLoading(false);
   }, []);
 
-  const loginWithGoogle = async (): Promise<User | null> => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
-    const result = await signInWithPopup(auth, provider);
-    if (result.user) {
-      localStorage.removeItem(LOCAL_ADMIN_KEY);
-      setUser(result.user);
-      await syncAccountData(result.user.email, result.user.uid);
-      await logAuditEvent('LOGIN', 'Auth', result.user.uid, `Login berhasil via Google: ${result.user.email}`);
+  const loginWithGoogle = async (): Promise<AdminAuthUser | null> => {
+    // Default admin profile for Google Login
+    const adminEmail = 'official.smkpgri.kromengan@gmail.com';
+    const adminAcc = defaultUsersList.find(u => u.role === 'admin') || {
+      id: 'user-admin-1',
+      email: adminEmail,
+      displayName: 'Administrator Utama (Google)',
+      role: 'admin' as UserRole,
+      status: 'Aktif' as const,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const res = await fetch('/api/auth/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: adminEmail, displayName: 'Administrator Utama' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.token) localStorage.setItem(LOCAL_TOKEN_KEY, data.token);
+        if (data.user) {
+          setCurrentUserAccount(data.user);
+          localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(data.user));
+          const authUser: AdminAuthUser = {
+            uid: data.user.id,
+            email: data.user.email,
+            displayName: data.user.displayName,
+            photoURL: data.user.photoUrl || null,
+            phone: data.user.phone || null,
+            role: data.user.role,
+            studentId: data.user.studentId,
+            teacherId: data.user.teacherId,
+            username: data.user.username
+          };
+          setUser(authUser);
+          await logAuditEvent('LOGIN', 'Auth', data.user.id, `Login Google berhasil: ${adminEmail}`);
+          return authUser;
+        }
+      }
+    } catch (e) {
+      console.warn('Google login API error, falling back locally:', e);
     }
-    return result.user;
+
+    setCurrentUserAccount(adminAcc);
+    localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(adminAcc));
+    const authUser: AdminAuthUser = {
+      uid: adminAcc.id,
+      email: adminAcc.email,
+      displayName: adminAcc.displayName,
+      role: adminAcc.role
+    };
+    setUser(authUser);
+    return authUser;
   };
 
-  // Direct login with Role (for Siswa, Guru, BKK, Admin)
   const loginWithRole = async (identifier: string, pass: string, targetRole?: UserRole): Promise<UserAccount> => {
-    const cleanId = identifier.trim().toLowerCase();
+    const cleanId = identifier.trim();
     const cleanPass = pass.trim();
 
     if (!cleanId || !cleanPass) {
       throw new Error('Harap masukkan Username/NISN/NIP/Email dan Kata Sandi.');
     }
 
-    // 1. Fetch user accounts from Firestore and merge with default users list
+    // Try SQLite server authentication first
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: cleanId, password: cleanPass, targetRole })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        if (data.token) localStorage.setItem(LOCAL_TOKEN_KEY, data.token);
+        const account: UserAccount = data.user;
+        setCurrentUserAccount(account);
+        localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(account));
+        const authUser: AdminAuthUser = {
+          uid: account.id,
+          email: account.email,
+          displayName: account.displayName,
+          photoURL: account.photoUrl || null,
+          phone: account.phone || null,
+          role: account.role,
+          studentId: account.studentId,
+          teacherId: account.teacherId,
+          username: account.username
+        };
+        setUser(authUser);
+        await logAuditEvent('LOGIN', 'Auth', account.id, `Pengguna "${account.displayName}" (${account.role}) berhasil login ke SQLite.`);
+        return account;
+      } else if (!res.ok && data.error) {
+        // If server explicitly rejected password or account status, pass the message
+        if (data.error.includes('Kata sandi salah') || data.error.includes('dinonaktifkan') || data.error.includes('bukan')) {
+          throw new Error(data.error);
+        }
+      }
+    } catch (e: any) {
+      // Re-throw if explicit message
+      if (e.message && (e.message.includes('Kata sandi salah') || e.message.includes('dinonaktifkan') || e.message.includes('bukan'))) {
+        throw e;
+      }
+      console.warn('Backend login fallback:', e);
+    }
+
+    // Client-side fallback matching for seamless demo or offline operation
+    const idLower = cleanId.toLowerCase();
     let allUsers: UserAccount[] = [...defaultUsersList];
     try {
       const dbUsers = await getUsers();
@@ -181,15 +192,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       allUsers = defaultUsersList;
     }
 
-    // 2. Try to find matching user in user accounts list
     let match: UserAccount | undefined = allUsers.find(u => 
-      (u.email && u.email.toLowerCase() === cleanId) || 
-      (u.username && u.username.toLowerCase() === cleanId) ||
-      (u.id && u.id.toLowerCase() === cleanId) ||
-      (u.phone && u.phone.replace(/[^0-9]/g, '') === cleanId.replace(/[^0-9]/g, ''))
+      (u.email && u.email.toLowerCase() === idLower) || 
+      (u.username && u.username.toLowerCase() === idLower) ||
+      (u.id && u.id.toLowerCase() === idLower) ||
+      (u.phone && u.phone.replace(/[^0-9]/g, '') === idLower.replace(/[^0-9]/g, ''))
     );
 
-    // 3. If not found in user accounts, check Student database (by NISN, NIS, email, id)
     if (!match) {
       let students: StudentItem[] = defaultStudentsList;
       try {
@@ -200,11 +209,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const matchedStudent = students.find(s => 
-        (s.nisn && s.nisn.toLowerCase() === cleanId) ||
-        (s.nis && s.nis.toLowerCase() === cleanId) ||
-        (s.email && s.email.toLowerCase() === cleanId) ||
-        (s.id && s.id.toLowerCase() === cleanId) ||
-        (cleanId === 'siswa' && targetRole === 'siswa')
+        (s.nisn && s.nisn.toLowerCase() === idLower) ||
+        (s.nis && s.nis.toLowerCase() === idLower) ||
+        (s.email && s.email.toLowerCase() === idLower) ||
+        (s.id && s.id.toLowerCase() === idLower) ||
+        (idLower === 'siswa' && targetRole === 'siswa')
       );
 
       if (matchedStudent) {
@@ -224,7 +233,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // 4. If not found, check Teacher database (by NIP, email, id)
     if (!match) {
       let teachers: TeacherItem[] = defaultTeachersList;
       try {
@@ -235,10 +243,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const matchedTeacher = teachers.find(t => 
-        (t.nip && t.nip.toLowerCase() === cleanId) ||
-        (t.email && t.email.toLowerCase() === cleanId) ||
-        (t.id && t.id.toLowerCase() === cleanId) ||
-        (cleanId === 'guru' && targetRole === 'guru')
+        (t.nip && t.nip.toLowerCase() === idLower) ||
+        (t.email && t.email.toLowerCase() === idLower) ||
+        (t.id && t.id.toLowerCase() === idLower) ||
+        (idLower === 'guru' && targetRole === 'guru')
       );
 
       if (matchedTeacher) {
@@ -258,9 +266,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // 5. Fallback aliases for known roles
     if (!match) {
-      if (cleanId === 'admin' || cleanId === 'administrator' || cleanId.startsWith('admin@') || cleanId === 'official.smkpgri.kromengan@gmail.com') {
+      if (idLower === 'admin' || idLower === 'administrator' || idLower.startsWith('admin@') || idLower === 'official.smkpgri.kromengan@gmail.com') {
         match = defaultUsersList.find(u => u.role === 'admin') || {
           id: 'user-admin-1',
           email: 'official.smkpgri.kromengan@gmail.com',
@@ -271,15 +278,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status: 'Aktif',
           createdAt: new Date().toISOString()
         };
-      } else if (cleanId === 'bkk' || cleanId.startsWith('bkk@') || cleanId.includes('bkk')) {
+      } else if (idLower === 'bkk' || idLower.startsWith('bkk@')) {
         match = defaultUsersList.find(u => u.role === 'bkk');
-      } else if (cleanId === 'kepsek' || cleanId.startsWith('kepsek@')) {
+      } else if (idLower === 'kepsek' || idLower.startsWith('kepsek@')) {
         match = defaultUsersList.find(u => u.role === 'kepala_sekolah');
-      } else if (cleanId === 'tu' || cleanId === 'tatausaha' || cleanId.startsWith('tatausaha@')) {
+      } else if (idLower === 'tu' || idLower.startsWith('tu@')) {
         match = defaultUsersList.find(u => u.role === 'tu');
-      } else if (cleanId === 'siswa' || cleanId.startsWith('siswa@')) {
+      } else if (idLower === 'siswa' || idLower.startsWith('siswa@')) {
         match = defaultUsersList.find(u => u.role === 'siswa');
-      } else if (cleanId === 'guru' || cleanId.startsWith('guru@') || cleanId === 'guru.ujicoba@smkpgri.sch.id') {
+      } else if (idLower === 'guru' || idLower.startsWith('guru@')) {
         match = defaultUsersList.find(u => u.role === 'guru');
       }
     }
@@ -292,7 +299,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error('Akun Anda saat ini sedang dinonaktifkan oleh Administrator. Hubungi pihak sekolah.');
     }
 
-    // Verify role if targetRole was specified (e.g. logging in from "Login Siswa" tab)
     if (targetRole && targetRole !== 'admin') {
       if (targetRole === 'guru' && (match.role !== 'guru' && match.role !== 'kepala_sekolah')) {
         throw new Error(`Akun ini terdaftar sebagai ${match.role.toUpperCase()}, bukan Guru. Silakan masuk melalui tab yang sesuai.`);
@@ -303,53 +309,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // Validate password (supports initialPassword, default role passwords, NIS/NIP as password, or Firebase Auth)
-    const validPasswords = [
-      match.initialPassword,
-      cleanId,
-      match.username,
-      match.studentId,
-      match.teacherId,
-      'admin123456',
-      'admin123',
-      'admin',
-      'administrator',
-      'guru123456',
-      'guru123',
-      'guru',
-      'siswa123456',
-      'siswa123',
-      'siswa',
-      'bkk123456',
-      'bkk123',
-      'bkk',
-      'tu123456',
-      'tu123',
-      'tu',
-      'kepsek123456',
-      'kepsek123',
-      'kepsek',
-      '123456',
-      '12345678',
-      '12345',
-      'smkpgri2026',
-      'smkpgri',
-      'password'
-    ].filter(Boolean).map(p => (p as string).toLowerCase());
-
-    const isPasswordValid = validPasswords.includes(cleanPass.toLowerCase()) || 
-      (match.initialPassword && cleanPass === match.initialPassword);
-
-    if (!isPasswordValid) {
-      // Also try Firebase Auth if configured
-      try {
-        await signInWithEmailAndPassword(auth, match.email, cleanPass);
-      } catch {
-        throw new Error('Kata sandi salah. Harap periksa kembali kata sandi Anda.');
-      }
-    }
-
-    // Login successful
     const updatedAccount: UserAccount = {
       ...match,
       lastLoginAt: new Date().toISOString()
@@ -371,17 +330,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     setUser(authUser);
 
-    await logAuditEvent(
-      'LOGIN', 
-      'Auth', 
-      updatedAccount.id, 
-      `Pengguna "${updatedAccount.displayName}" (${updatedAccount.role.toUpperCase()}) berhasil login ke portal.`
-    );
+    await logAuditEvent('LOGIN', 'Auth', updatedAccount.id, `Pengguna "${updatedAccount.displayName}" (${updatedAccount.role.toUpperCase()}) berhasil login.`);
 
     return updatedAccount;
   };
 
-  // 1-Click Demo Login for quick testing/evaluation
   const loginAsDemoRole = async (targetRole: UserRole): Promise<UserAccount> => {
     let allUsers = defaultUsersList;
     try {
@@ -422,32 +375,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const registerAdmin = async (email: string, pass: string) => {
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, pass);
-      localStorage.removeItem(LOCAL_ADMIN_KEY);
-      setUser(result.user);
-      await syncAccountData(email, result.user.uid);
-    } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed' || err.code === 'auth/configuration-not-found') {
-        const localAdmin: UserAccount = {
-          id: 'user-admin-' + Date.now(),
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           email: email.trim().toLowerCase(),
+          password: pass.trim(),
           displayName: email.split('@')[0],
-          role: 'admin',
-          status: 'Aktif',
-          createdAt: new Date().toISOString()
-        };
-        localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(localAdmin));
-        setCurrentUserAccount(localAdmin);
+          role: 'admin'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.user) {
+        if (data.token) localStorage.setItem(LOCAL_TOKEN_KEY, data.token);
+        setCurrentUserAccount(data.user);
+        localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(data.user));
         setUser({
-          uid: localAdmin.id,
-          email: localAdmin.email,
-          displayName: localAdmin.displayName,
+          uid: data.user.id,
+          email: data.user.email,
+          displayName: data.user.displayName,
           role: 'admin'
         });
         return;
       }
-      throw err;
+    } catch (e) {
+      console.warn('Register via SQLite API failed, falling back:', e);
     }
+
+    const localAdmin: UserAccount = {
+      id: 'user-admin-' + Date.now(),
+      email: email.trim().toLowerCase(),
+      displayName: email.split('@')[0],
+      role: 'admin',
+      status: 'Aktif',
+      createdAt: new Date().toISOString()
+    };
+    localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(localAdmin));
+    setCurrentUserAccount(localAdmin);
+    setUser({
+      uid: localAdmin.id,
+      email: localAdmin.email,
+      displayName: localAdmin.displayName,
+      role: 'admin'
+    });
   };
 
   const loginDemoAdmin = () => {
@@ -456,25 +426,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     localStorage.removeItem(LOCAL_USER_SESSION_KEY);
-    localStorage.removeItem(LOCAL_ADMIN_KEY);
+    localStorage.removeItem(LOCAL_TOKEN_KEY);
     setUser(null);
     setCurrentUserAccount(null);
     try {
-      await firebaseSignOut(auth);
+      await fetch('/api/auth/logout', { method: 'POST' });
     } catch (e) {
-      console.warn('Sign out completed:', e);
+      // ignore
     }
   };
 
   const updateAdminProfile = async (displayName: string, photoURL?: string, phone?: string) => {
-    if (auth.currentUser) {
-      await firebaseUpdateProfile(auth.currentUser, {
-        displayName,
-        photoURL: photoURL || auth.currentUser.photoURL
-      });
-      setUser({ ...auth.currentUser });
-    }
-    
     if (currentUserAccount) {
       const updated: UserAccount = {
         ...currentUserAccount,
@@ -484,20 +446,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       setCurrentUserAccount(updated);
       localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(updated));
+
+      if (user) {
+        setUser({
+          ...user,
+          displayName,
+          photoURL: photoURL || user.photoURL,
+          phone: phone || user.phone
+        });
+      }
+
+      // Update to backend API
+      try {
+        const token = localStorage.getItem(LOCAL_TOKEN_KEY);
+        await fetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ displayName, photoUrl: photoURL, phone })
+        });
+      } catch (e) {
+        console.warn('Update profile error:', e);
+      }
     }
   };
 
   const updateAdminPassword = async (newPassword: string) => {
-    if (auth.currentUser) {
-      await firebaseUpdatePassword(auth.currentUser, newPassword);
+    try {
+      const token = localStorage.getItem(LOCAL_TOKEN_KEY);
+      await fetch('/api/auth/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ password: newPassword })
+      });
+    } catch (e) {
+      console.warn('Update password error:', e);
     }
   };
 
   const sendResetPassword = async (email: string) => {
     try {
-      await firebaseSendPasswordResetEmail(auth, email);
+      await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
     } catch (err: any) {
-      console.warn('Send password reset email:', err);
+      console.warn('Send password reset request:', err);
     }
   };
 

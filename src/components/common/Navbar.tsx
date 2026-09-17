@@ -141,9 +141,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => handleNavClick('home')}
             className="flex items-center gap-3 text-left group shrink-0 cursor-pointer"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-900 text-white flex items-center justify-center font-black text-lg shadow-xs group-hover:bg-blue-800 transition-colors shrink-0">
-              S
-            </div>
+            {schoolInfo.logoUrl ? (
+              <img
+                src={schoolInfo.logoUrl}
+                alt={schoolInfo.name}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain bg-white border border-slate-200/90 shadow-xs group-hover:scale-105 transition-transform shrink-0 p-0.5"
+              />
+            ) : (
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-900 text-white flex items-center justify-center font-black text-lg shadow-xs group-hover:bg-blue-800 transition-colors shrink-0">
+                <img src="/favicon.svg" alt="Emblem" className="w-6 h-6 object-contain" />
+              </div>
+            )}
             <div className="flex flex-col leading-tight">
               <span className="text-sm sm:text-base font-extrabold text-slate-900 uppercase tracking-tight group-hover:text-blue-700 transition-colors">
                 {schoolInfo.name}

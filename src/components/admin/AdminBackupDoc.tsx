@@ -218,7 +218,7 @@ export const AdminBackupDoc: React.FC<AdminBackupDocProps> = ({
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Struktur Skema Firestore</span>
+          <span>Struktur Skema SQLite</span>
         </button>
 
         <button
@@ -230,7 +230,7 @@ export const AdminBackupDoc: React.FC<AdminBackupDocProps> = ({
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>Aturan Keamanan (firestore.rules)</span>
+          <span>Keamanan Database & API</span>
         </button>
 
         <button
@@ -254,9 +254,9 @@ export const AdminBackupDoc: React.FC<AdminBackupDocProps> = ({
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
                 <Database className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800">1-Click Full JSON Snapshot</h3>
+              <h3 className="text-sm font-bold text-slate-800">1-Click Full Backup Snapshot</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Menyimpan salinan seluruh dokumen Firestore (Siswa, Guru, Rombel, Nilai, Absensi, PKL, BKK, Alumni, Tracer Study) ke dalam satu berkas terenkripsi ringan.
+                Menyimpan salinan seluruh data SQLite (Siswa, Guru, Rombel, Nilai, Absensi, PKL, BKK, Alumni, Tracer Study) ke dalam satu berkas terenkripsi ringan.
               </p>
               <button
                 onClick={handleDownloadFullBackup}
@@ -328,13 +328,13 @@ export const AdminBackupDoc: React.FC<AdminBackupDocProps> = ({
         </div>
       )}
 
-      {/* TAB 2: FIRESTORE SCHEMA */}
+      {/* TAB 2: SQLITE SCHEMA */}
       {activeTab === 'schema' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-800">Daftar Koleksi Firestore (Cloud Firestore Schema)</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Struktur database terdistribusi NoSQL untuk Portal Sekolah</p>
+              <h3 className="text-sm font-bold text-slate-800">Daftar Tabel Database (SQLite Single Engine)</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Struktur database terpadu relasional untuk Portal SMK PGRI Kromengan</p>
             </div>
           </div>
 
@@ -411,61 +411,46 @@ export const AdminBackupDoc: React.FC<AdminBackupDocProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-800">Prinsip Keamanan Cloud Firestore (Zero-Trust)</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Konfigurasi firestore.rules dengan proteksi Role-Based Access Control</p>
+              <h3 className="text-sm font-bold text-slate-800">Prinsip Keamanan SQLite & Express API</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Proteksi Parameterized Prepared Statements, Table Whitelisting, Scrypt Password Hashing, & Rate Limiting</p>
             </div>
             <button
-              onClick={() => handleCopy(`rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function isAuthenticated() { return request.auth != null; }\n    function isAdmin() { return isAuthenticated() && (request.auth.token.role == 'admin' || request.auth.token.email.matches('.*admin.*|.*official.*')); }\n    match /{document=**} {\n      allow read: if true;\n      allow write: if isAuthenticated();\n    }\n  }\n}`, 'rules')}
+              onClick={() => handleCopy(`// SQLite Security & Defense-in-Depth Specification\n1. Parameterized Prepared Statements (Zero SQL Injection)\n2. Strict Table Whitelisting (db.prepare allowed only on authorized tables)\n3. Scrypt Salting & Cryptographic Password Hashing\n4. In-Memory Sliding-Window Rate Limiting on /api/auth/*\n5. Strict HTTP Headers (X-Content-Type-Options, X-Frame-Options, XSS, Referrer)`, 'rules')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50"
             >
               {copiedSection === 'rules' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedSection === 'rules' ? 'Tersalin' : 'Salin Rules'}</span>
+              <span>{copiedSection === 'rules' ? 'Tersalin' : 'Salin Standar Keamanan'}</span>
             </button>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900 text-emerald-400 font-mono text-xs overflow-x-auto leading-relaxed">
-            <pre>{`rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // Helper Functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.role == 'admin' || 
-        request.auth.token.email == 'official.smkpgri.kromengan@gmail.com'
-      );
-    }
+            <pre>{`// ==========================================
+// ARSITEKTUR KEAMANAN DATABASE TUNGGAL SQLITE
+// ==========================================
 
-    // Public Read-Only Collections (Website Publik)
-    match /school_info/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /news/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /events/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /achievements/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /gallery/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    
-    // Academic & School Management
-    match /students/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /teachers/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /classes/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /grades/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /attendance/{id} { allow read: if true; allow write: if isAuthenticated(); }
+1. Parameterized Queries (Anti SQL-Injection):
+   Setiap operasi SELECT, INSERT, UPDATE, dan DELETE pada SQLite
+   menggunakan prepared statement dengan placeholder (?) sehingga
+   data input dari pengguna tidak pernah diinterpretasikan sebagai kode SQL.
 
-    // PKL, BKK & Alumni
-    match /companies/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /internships/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /jobs/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /alumni/{id} { allow read: if true; allow write: if isAuthenticated(); }
-    match /tracer_responses/{id} { allow read: if true; allow create: if true; allow update, delete: if isAuthenticated(); }
+2. Table Whitelisting & Identifier Guard:
+   Nama tabel diverifikasi secara ketat terhadap daftar ALLOWED_TABLES
+   sebelum kueri dieksekusi. Nama tabel yang tidak sah akan langsung ditolak.
 
-    // System Logs & Users
-    match /audit_logs/{id} { allow read: if isAuthenticated(); allow create: if true; }
-    match /users/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
-  }
-}`}</pre>
+3. Scrypt Password Hashing with Salt:
+   Kata sandi akun pengguna (Admin, Guru, Siswa) dienkripsi menggunakan
+   algoritma kriptografi crypto.scryptSync dengan salt 16-byte acak.
+   Hash kata sandi tidak pernah dikembalikan ke sisi klien (browser).
+
+4. Rate Limiting Otentikasi:
+   Setiap permintaan ke rute /api/auth/* dilindungi oleh sliding-window
+   rate limiter untuk menggagalkan serangan brute-force dictionary attack.
+
+5. Header Keamanan HTTP:
+   - X-Content-Type-Options: nosniff
+   - X-Frame-Options: SAMEORIGIN
+   - X-XSS-Protection: 1; mode=block
+   - Referrer-Policy: strict-origin-when-cross-origin`}</pre>
           </div>
         </div>
       )}
