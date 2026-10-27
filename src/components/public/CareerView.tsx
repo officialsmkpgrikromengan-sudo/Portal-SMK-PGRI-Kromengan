@@ -33,7 +33,7 @@ import {
   MajorItem 
 } from '../../types';
 import { defaultTracerSurveysList } from '../../data/defaultData';
-import { applyForJob, submitTracerResponse } from '../../lib/firebase';
+import { applyForJob, submitTracerResponse } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
 interface CareerViewProps {

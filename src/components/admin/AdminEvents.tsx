@@ -13,7 +13,7 @@ import {
   Link as LinkIcon 
 } from 'lucide-react';
 import { EventItem, ContentStatus } from '../../types';
-import { createEvent, updateEvent, deleteEvent } from '../../lib/firebase';
+import { createEvent, updateEvent, deleteEvent } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 import { ConfirmDialog } from '../common/ConfirmDialog';

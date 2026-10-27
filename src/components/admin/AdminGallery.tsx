@@ -9,7 +9,7 @@ import {
   UploadCloud 
 } from 'lucide-react';
 import { GalleryItem, GalleryCategory } from '../../types';
-import { createGalleryItem, deleteGalleryItem } from '../../lib/firebase';
+import { createGalleryItem, deleteGalleryItem } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 import { ConfirmDialog } from '../common/ConfirmDialog';

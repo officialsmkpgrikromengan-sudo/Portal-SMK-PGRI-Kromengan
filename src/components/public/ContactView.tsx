@@ -14,7 +14,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { SchoolInfo } from '../../types';
-import { sendMessage } from '../../lib/firebase';
+import { sendMessage } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
 interface ContactViewProps {

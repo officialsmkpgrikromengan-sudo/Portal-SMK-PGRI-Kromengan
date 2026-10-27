@@ -14,7 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import { NewsItem, ContentStatus } from '../../types';
-import { createNews, updateNews, deleteNews } from '../../lib/firebase';
+import { createNews, updateNews, deleteNews } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 import { ConfirmDialog } from '../common/ConfirmDialog';

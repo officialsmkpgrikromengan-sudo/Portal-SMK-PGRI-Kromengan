@@ -42,7 +42,7 @@ import {
   saveGrade, 
   verifyInternshipJournal, 
   saveInternshipMonitoring 
-} from '../../lib/firebase';
+} from '../../lib/api';
 
 interface TeacherPortalProps {
   schoolInfo: SchoolInfo;

@@ -17,7 +17,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { ClassItem, ClassGrade, ClassStatus, MajorItem, TeacherItem, StudentItem } from '../../types';
-import { createClass, updateClass, deleteClass } from '../../lib/firebase';
+import { createClass, updateClass, deleteClass } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 

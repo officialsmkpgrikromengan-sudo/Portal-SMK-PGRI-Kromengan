@@ -16,7 +16,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { AuditLogItem, AuditAction, AuditModule } from '../../types';
-import { getAuditLogs, logAuditEvent } from '../../lib/firebase';
+import { getAuditLogs, logAuditEvent } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
 export const AdminAuditLogs: React.FC = () => {

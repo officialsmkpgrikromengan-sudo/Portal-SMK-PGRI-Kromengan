@@ -34,7 +34,7 @@ import {
   deleteGradeRecord, 
   calculateFinalGrade,
   calculateStudentAttendanceSummary
-} from '../../lib/firebase';
+} from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 

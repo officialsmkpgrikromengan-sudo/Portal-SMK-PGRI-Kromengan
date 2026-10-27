@@ -14,12 +14,15 @@ export const getActiveVocationalPrograms = (
     return fallbackPrograms || [];
   }
 
-  // Filter only active majors
-  const activeMajors = majorsList.filter(m => m.status === 'Aktif');
+  // Filter only active majors (case-insensitive and tolerant of 'active' / 'aktif')
+  const activeMajors = majorsList.filter(m => {
+    const st = String(m.status || '').toLowerCase().trim();
+    return st === 'aktif' || st === 'active' || !m.status;
+  });
 
   // If all are inactive, return empty or fallback if none active
   if (activeMajors.length === 0) {
-    return [];
+    return fallbackPrograms || [];
   }
 
   return activeMajors.map(m => {
@@ -31,7 +34,7 @@ export const getActiveVocationalPrograms = (
            p.name?.toLowerCase().includes(m.code?.toLowerCase())
     );
 
-    const fullDesc = m.description?.trim() || match?.fullDesc || match?.shortDesc || `Program Keahlian ${m.name} SMK PGRI Teladan Nusantara berorientasi industri dan sertifikasi profesi.`;
+    const fullDesc = m.description?.trim() || match?.fullDesc || match?.shortDesc || `Program Keahlian ${m.name} SMK PGRI Kromengan berorientasi industri dan sertifikasi profesi.`;
     const shortDesc = m.description?.trim() || match?.shortDesc || fullDesc;
 
     // Default icon selection based on code if none specified

@@ -15,7 +15,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { SubjectItem, SubjectGroup, SubjectStatus, MajorItem } from '../../types';
-import { createSubject, updateSubject, deleteSubject } from '../../lib/firebase';
+import { createSubject, updateSubject, deleteSubject } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 

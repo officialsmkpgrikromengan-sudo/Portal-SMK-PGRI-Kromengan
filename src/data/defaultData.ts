@@ -2431,20 +2431,6 @@ export const defaultUsersList: UserAccount[] = [
     photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     lastLoginAt: '2026-08-27T09:00:00.000Z',
     createdAt: '2026-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'user-siswa-1',
-    email: 'fadhil.rahadian@siswa.smkpgri.sch.id',
-    username: '0071829341',
-    initialPassword: 'siswa123456',
-    displayName: 'Muhammad Fadhil Rahadian',
-    role: 'siswa',
-    status: 'Aktif',
-    phone: '081334567891',
-    photoUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80',
-    studentId: 'std-1',
-    lastLoginAt: '2026-08-27T19:30:00.000Z',
-    createdAt: '2026-01-01T00:00:00.000Z'
   }
 ];
 

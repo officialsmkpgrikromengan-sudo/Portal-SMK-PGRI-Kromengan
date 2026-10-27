@@ -21,7 +21,7 @@ interface FooterProps {
   majorsList?: MajorItem[];
   onNavigate: (page: NavigationPage) => void;
   onOpenAdmin: () => void;
-  onOpenLoginModal?: (role?: 'siswa' | 'guru' | 'bkk' | 'admin') => void;
+  onOpenLoginModal?: (role?: 'guru' | 'bkk' | 'admin') => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ 
@@ -257,7 +257,7 @@ export const Footer: React.FC<FooterProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={() => onOpenLoginModal('siswa')}
+                  onClick={() => onOpenLoginModal('guru')}
                   className="text-slate-400 hover:text-white font-medium transition-colors"
                 >
                   Akses Masuk Portal

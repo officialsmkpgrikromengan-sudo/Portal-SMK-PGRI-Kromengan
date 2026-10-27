@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
-  GraduationCap, 
   BookOpen, 
   Briefcase, 
   Lock, 
@@ -19,14 +18,14 @@ import { UserRole } from '../../types';
 interface PortalLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialRole?: 'siswa' | 'guru' | 'bkk' | 'admin';
+  initialRole?: 'guru' | 'bkk' | 'admin';
   onLoginSuccess?: (role: UserRole) => void;
 }
 
 export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
   isOpen,
   onClose,
-  initialRole = 'siswa',
+  initialRole = 'guru',
   onLoginSuccess
 }) => {
   const { loginWithRole } = useAuth();
@@ -58,7 +57,7 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) {
-      error('Harap masukkan NISN/NIP/Username dan Kata Sandi.');
+      error('Harap masukkan NIP/Username/Email dan Kata Sandi.');
       return;
     }
 
@@ -72,7 +71,7 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
       }
     } catch (err: any) {
       console.error(err);
-      error(err.message || 'Gagal masuk. Periksa kembali NISN/NIP/Username dan Kata Sandi Anda.');
+      error(err.message || 'Gagal masuk. Periksa kembali NIP/Username/Email dan Kata Sandi Anda.');
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +84,6 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
       <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
         {/* Header with Role Color Accent */}
         <div className={`p-6 text-white transition-colors relative ${
-          activeRole === 'siswa' ? 'bg-gradient-to-r from-blue-700 to-indigo-800' :
           activeRole === 'guru' ? 'bg-gradient-to-r from-emerald-700 to-teal-800' :
           activeRole === 'bkk' ? 'bg-gradient-to-r from-amber-600 to-orange-700' :
           'bg-gradient-to-r from-slate-800 to-slate-900'
@@ -101,7 +99,6 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
 
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0">
-              {activeRole === 'siswa' && <GraduationCap className="w-6 h-6 text-white" />}
               {activeRole === 'guru' && <BookOpen className="w-6 h-6 text-white" />}
               {activeRole === 'bkk' && <Briefcase className="w-6 h-6 text-white" />}
               {activeRole === 'admin' && <ShieldCheck className="w-6 h-6 text-white" />}
@@ -111,8 +108,7 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
                 Masuk Sistem Terpadu
               </span>
               <h2 className="text-xl font-black text-white">
-                {activeRole === 'siswa' && 'Portal Siswa'}
-                {activeRole === 'guru' && 'Portal Guru'}
+                {activeRole === 'guru' && 'Portal Guru & Tendik'}
                 {activeRole === 'bkk' && 'Portal Bursa Kerja Khusus (BKK)'}
                 {activeRole === 'admin' && 'Administrator Sekolah'}
               </h2>
@@ -120,7 +116,6 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
           </div>
 
           <p className="text-xs text-white/80 mt-2 leading-relaxed">
-            {activeRole === 'siswa' && 'Akses jadwal pelajaran, riwayat absensi, lembar nilai rapor, dan jurnal kegiatan PKL.'}
             {activeRole === 'guru' && 'Input absensi harian, kelola nilai siswa, dan validasi jurnal PKL bimbingan.'}
             {activeRole === 'bkk' && 'Kelola informasi lowongan karir, data pelamar alumni, dan verifikasi mitra industri.'}
             {activeRole === 'admin' && 'Akses pengelolaan master data dan konfigurasi sistem resmi sekolah.'}
@@ -130,20 +125,6 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
         {/* Role Selector Tabs */}
         <div className="px-6 pt-4 pb-2 bg-slate-50 border-b border-slate-200">
           <div className="flex items-center gap-2 p-1 bg-slate-200/70 rounded-2xl">
-            <button
-              id="login-tab-siswa"
-              type="button"
-              onClick={() => handleRoleChange('siswa')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                activeRole === 'siswa'
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span>Siswa</span>
-            </button>
-
             <button
               id="login-tab-guru"
               type="button"
@@ -171,6 +152,20 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
               <Briefcase className="w-3.5 h-3.5" />
               <span>BKK</span>
             </button>
+
+            <button
+              id="login-tab-admin"
+              type="button"
+              onClick={() => handleRoleChange('admin')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                activeRole === 'admin'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Admin</span>
+            </button>
           </div>
         </div>
 
@@ -178,7 +173,6 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
         <form onSubmit={handleLoginSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              {activeRole === 'siswa' && 'Nomor Induk Siswa Nasional (NISN) atau Email'}
               {activeRole === 'guru' && 'Nomor Induk Pegawai (NIP) atau Email'}
               {activeRole === 'bkk' && 'Username atau Email Petugas BKK'}
               {activeRole === 'admin' && 'Email Administrator'}
@@ -194,12 +188,11 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder={
-                  activeRole === 'siswa' ? 'Contoh NISN: 0071829341 atau fadhil.rahadian@siswa.smkpgri.sch.id' :
                   activeRole === 'guru' ? 'Contoh: 198503152010011002 atau budi.santoso@smkpgri.sch.id' :
                   activeRole === 'bkk' ? 'Contoh: bkk atau koordinator.bkk@smkpgri.sch.id' :
                   'official.smkpgri.kromengan@gmail.com'
                 }
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
               />
             </div>
           </div>
@@ -219,7 +212,7 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan kata sandi akun Anda"
-                className="w-full pl-10 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
               />
               <button
                 type="button"
@@ -234,9 +227,9 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
 
           {/* Notice for No Public Registration */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 text-[11px] text-slate-600">
-            <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>Info Akses:</strong> Akun diterbitkan resmi oleh Administrator Sekolah. Tidak ada formulir pendaftaran mandiri.
+              <strong>Info Akses:</strong> Akun diterbitkan resmi oleh Administrator Sekolah. Tidak ada formulir pendaftaran mandiri publik.
             </p>
           </div>
 
@@ -246,7 +239,6 @@ export const PortalLoginModal: React.FC<PortalLoginModalProps> = ({
             type="submit"
             disabled={isLoading}
             className={`w-full py-3.5 rounded-2xl text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ${
-              activeRole === 'siswa' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/25' :
               activeRole === 'guru' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25' :
               activeRole === 'bkk' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/25' :
               'bg-slate-900 hover:bg-black shadow-slate-900/25'

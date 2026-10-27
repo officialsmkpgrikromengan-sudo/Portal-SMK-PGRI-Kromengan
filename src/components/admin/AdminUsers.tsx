@@ -16,7 +16,6 @@ import {
   XCircle, 
   AlertCircle,
   Briefcase,
-  GraduationCap,
   Sparkles,
   BookOpen,
   School,
@@ -26,23 +25,21 @@ import {
   X,
   Copy,
   Check,
-  Zap,
   CheckCircle2,
   RefreshCw
 } from 'lucide-react';
 import { UserAccount, UserRole, TeacherItem, StudentItem } from '../../types';
-import { getUsers, saveUser, deleteUser, updateUserStatus, logAuditEvent } from '../../lib/firebase';
+import { getUsers, saveUser, deleteUser, updateUserStatus, logAuditEvent } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
 interface AdminUsersProps {
   teachersList: TeacherItem[];
-  studentsList: StudentItem[];
+  studentsList?: StudentItem[];
   currentUserEmail?: string;
 }
 
 export const AdminUsers: React.FC<AdminUsersProps> = ({
   teachersList = [],
-  studentsList = [],
   currentUserEmail = ''
 }) => {
   const { success, error, info } = useToast();
@@ -66,19 +63,11 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
   const [formStatus, setFormStatus] = useState<'Aktif' | 'Nonaktif'>('Aktif');
   const [formPhone, setFormPhone] = useState('');
   const [formTeacherId, setFormTeacherId] = useState('');
-  const [formStudentId, setFormStudentId] = useState('');
   const [formNotes, setFormNotes] = useState('');
 
-  // Selected Student/Teacher helper
-  const [selectedStudentIdentifier, setSelectedStudentIdentifier] = useState('');
+  // Selected Teacher helper
   const [selectedTeacherNIP, setSelectedTeacherNIP] = useState('');
-
-  // Auto-sync status feedback
-  const [matchedStudentInfo, setMatchedStudentInfo] = useState<StudentItem | null>(null);
   const [matchedTeacherInfo, setMatchedTeacherInfo] = useState<TeacherItem | null>(null);
-
-  // Bulk sync loading
-  const [isBulkSyncing, setIsBulkSyncing] = useState(false);
 
   // Tab
   const [activeTab, setActiveTab] = useState<'users' | 'matrix'>('users');
@@ -100,24 +89,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
     fetchUsers();
   }, []);
 
-  // Quick count of students without login accounts
-  const unprovisionedStudents = useMemo(() => {
-    const existingStudentUserIds = new Set(
-      usersList
-        .filter(u => u.role === 'siswa')
-        .map(u => u.studentId || u.username)
-        .filter(Boolean)
-    );
-    const existingUsernames = new Set(
-      usersList.map(u => (u.username || '').toLowerCase())
-    );
-
-    return studentsList.filter(s => {
-      const nisnKey = (s.nisn || s.nis || '').toLowerCase();
-      return !existingStudentUserIds.has(s.id) && !existingUsernames.has(nisnKey);
-    });
-  }, [studentsList, usersList]);
-
   const handleOpenAddRole = (presetRole: UserRole) => {
     setIsEditing(false);
     setSelectedUser(null);
@@ -125,32 +96,10 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
     setFormStatus('Aktif');
     setFormPhone('');
     setFormNotes('');
-    setSelectedStudentIdentifier('');
     setSelectedTeacherNIP('');
-    setMatchedStudentInfo(null);
     setMatchedTeacherInfo(null);
 
-    if (presetRole === 'siswa') {
-      const firstStudent = unprovisionedStudents[0] || studentsList[0];
-      if (firstStudent) {
-        const stdName = firstStudent.fullName || (firstStudent as any).name || 'Siswa';
-        const stdNisn = firstStudent.nisn || firstStudent.nis || '';
-        setFormDisplayName(stdName);
-        setFormStudentId(firstStudent.id);
-        setFormUsername(stdNisn);
-        setFormEmail(firstStudent.email || `${stdNisn || 'siswa'}@siswa.smkpgri.sch.id`);
-        setFormPhone(firstStudent.phone || '');
-        setSelectedStudentIdentifier(stdNisn || firstStudent.id);
-        setMatchedStudentInfo(firstStudent);
-      } else {
-        setFormDisplayName('');
-        setFormStudentId('');
-        setFormUsername('');
-        setFormEmail('');
-      }
-      setFormInitialPassword('siswa123456');
-      setFormTeacherId('');
-    } else if (presetRole === 'guru') {
+    if (presetRole === 'guru') {
       const firstTeacher = teachersList[0];
       if (firstTeacher) {
         const tchName = firstTeacher.fullName || (firstTeacher as any).name || 'Guru';
@@ -168,80 +117,28 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
         setFormEmail('');
       }
       setFormInitialPassword('guru123456');
-      setFormStudentId('');
     } else if (presetRole === 'bkk') {
       setFormDisplayName('Koordinator BKK & Kemitraan DUDI');
       setFormUsername('bkk');
       setFormEmail('bkk@smkpgri.sch.id');
       setFormInitialPassword('bkk123456');
       setFormTeacherId('');
-      setFormStudentId('');
     } else {
       setFormDisplayName('');
       setFormUsername('');
       setFormEmail('');
       setFormInitialPassword('admin123456');
       setFormTeacherId('');
-      setFormStudentId('');
     }
 
     setShowModal(true);
   };
 
-  // Synchronize when selecting student from dropdown
-  const handleSelectStudent = (identifier: string) => {
-    setSelectedStudentIdentifier(identifier);
-    if (!identifier) {
-      setMatchedStudentInfo(null);
-      return;
-    }
-
-    const st = studentsList.find(s => 
-      s.nisn === identifier || 
-      s.id === identifier || 
-      s.nis === identifier
-    );
-
-    if (st) {
-      const stdName = st.fullName || (st as any).name || 'Siswa';
-      const stdNisn = st.nisn || st.nis || '';
-      setFormDisplayName(stdName);
-      setFormStudentId(st.id);
-      setFormUsername(stdNisn);
-      setFormEmail(st.email || `${stdNisn || 'siswa'}@siswa.smkpgri.sch.id`);
-      setFormPhone(st.phone || '');
-      setMatchedStudentInfo(st);
-    }
-  };
-
-  // Synchronize in real-time when user types or pastes an NISN in username field
+  // Synchronize in real-time when user types or pastes an NIP in username field
   const handleUsernameChange = (val: string) => {
     setFormUsername(val);
 
-    if (formRole === 'siswa') {
-      const cleanVal = val.trim().toLowerCase();
-      const matched = studentsList.find(s => 
-        (s.nisn && s.nisn.toLowerCase() === cleanVal) || 
-        (s.nis && s.nis.toLowerCase() === cleanVal) ||
-        (s.id && s.id.toLowerCase() === cleanVal)
-      );
-
-      if (matched) {
-        const stdName = matched.fullName || (matched as any).name || 'Siswa';
-        setFormDisplayName(stdName);
-        setFormStudentId(matched.id);
-        if (!formEmail || formEmail.includes('@siswa.smkpgri.sch.id')) {
-          setFormEmail(matched.email || `${matched.nisn || matched.nis}@siswa.smkpgri.sch.id`);
-        }
-        if (matched.phone) {
-          setFormPhone(matched.phone);
-        }
-        setSelectedStudentIdentifier(matched.nisn || matched.id);
-        setMatchedStudentInfo(matched);
-      } else {
-        setMatchedStudentInfo(null);
-      }
-    } else if (formRole === 'guru') {
+    if (formRole === 'guru') {
       const cleanVal = val.trim().toLowerCase();
       const matched = teachersList.find(t => 
         (t.nip && t.nip.toLowerCase() === cleanVal) || 
@@ -296,75 +193,14 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
     setFormStatus(user.status);
     setFormPhone(user.phone || '');
     setFormTeacherId(user.teacherId || '');
-    setFormStudentId(user.studentId || '');
     setFormNotes(user.notes || '');
 
-    if (user.role === 'siswa') {
-      const matched = studentsList.find(s => s.id === user.studentId || s.nisn === user.username);
-      setMatchedStudentInfo(matched || null);
-    } else if (user.role === 'guru') {
+    if (user.role === 'guru') {
       const matched = teachersList.find(t => t.id === user.teacherId || t.nip === user.username);
       setMatchedTeacherInfo(matched || null);
     }
 
     setShowModal(true);
-  };
-
-  // Bulk Synchronize All Student Accounts based on NISN
-  const handleBulkSyncAllStudents = async () => {
-    if (unprovisionedStudents.length === 0) {
-      info('Semua data siswa sudah memiliki akun login portal!');
-      return;
-    }
-
-    const confirmMsg = `Ditemukan ${unprovisionedStudents.length} siswa yang belum memiliki akun login.\n\nApakah Anda ingin membuatkan akun login otomatis untuk semua siswa ini berdasarkan NISN mereka dengan password default 'siswa123456'?`;
-    if (!window.confirm(confirmMsg)) return;
-
-    try {
-      setIsBulkSyncing(true);
-      const now = new Date().toISOString();
-      let createdCount = 0;
-
-      for (const std of unprovisionedStudents) {
-        const stdNisn = std.nisn || std.nis;
-        if (!stdNisn) continue;
-
-        const stdName = std.fullName || (std as any).name || 'Siswa';
-        const userToCreate: UserAccount = {
-          id: `usr-std-${std.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          displayName: stdName,
-          username: stdNisn.toLowerCase(),
-          initialPassword: 'siswa123456',
-          email: std.email || `${stdNisn}@siswa.smkpgri.sch.id`,
-          role: 'siswa',
-          status: 'Aktif',
-          studentId: std.id,
-          phone: std.phone || undefined,
-          notes: `Akun dibuat otomatis via Sinkronisasi NISN Massal (${std.classId})`,
-          createdAt: now,
-          updatedAt: now
-        };
-
-        await saveUser(userToCreate);
-        createdCount++;
-      }
-
-      await logAuditEvent(
-        'CREATE',
-        'Auth',
-        'bulk-sync-students',
-        `Menyinkronkan ${createdCount} akun login siswa baru secara massal berdasarkan NISN`,
-        'Admin Utama'
-      );
-
-      success(`Berhasil menyinkronkan ${createdCount} akun login siswa baru berdasarkan NISN!`);
-      await fetchUsers();
-    } catch (err) {
-      console.error(err);
-      error('Terjadi kesalahan saat menyinkronkan akun siswa.');
-    } finally {
-      setIsBulkSyncing(false);
-    }
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
@@ -375,7 +211,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
     }
 
     if (!formUsername.trim()) {
-      error(formRole === 'siswa' ? 'NISN wajib diisi sebagai Username login siswa.' : 'Username / Login ID wajib diisi.');
+      error('Username / Login ID wajib diisi.');
       return;
     }
 
@@ -393,7 +229,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
         status: formStatus,
         phone: formPhone.trim() || undefined,
         teacherId: formRole === 'guru' || formRole === 'kepala_sekolah' || formRole === 'bkk' ? formTeacherId || undefined : undefined,
-        studentId: formRole === 'siswa' ? formStudentId || undefined : undefined,
         notes: formNotes.trim() || undefined,
         createdAt: isEditing && selectedUser ? selectedUser.createdAt : now,
         updatedAt: now
@@ -495,8 +330,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
         return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Koordinator BKK</span>;
       case 'tu':
         return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Tata Usaha (TU)</span>;
-      case 'siswa':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Siswa (NISN)</span>;
       default:
         return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">{role}</span>;
     }
@@ -515,34 +348,12 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
             Manajemen Akun & Hak Akses
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mt-1">
-            Buat akun login untuk Siswa (berdasarkan NISN), Guru, BKK, dan Staff. NISN siswa langsung tersinkronisasi otomatis dengan nama siswa tanpa perlu input manual satu per satu.
+            Kelola akun pengguna internal dan hak akses untuk Dewan Guru, Koordinator BKK, dan Tenaga Pendidik / Administrator.
           </p>
         </div>
 
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            id="btn-quick-add-siswa"
-            onClick={() => handleOpenAddRole('siswa')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
-          >
-            <GraduationCap className="w-4 h-4" />
-            <span>+ Akun Siswa (NISN)</span>
-          </button>
-
-          {unprovisionedStudents.length > 0 && (
-            <button
-              id="btn-bulk-sync-students"
-              onClick={handleBulkSyncAllStudents}
-              disabled={isBulkSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer animate-pulse"
-              title="Sinkronkan akun login untuk semua data siswa yang belum memiliki akun"
-            >
-              <Zap className="w-4 h-4" />
-              <span>{isBulkSyncing ? 'Menyinkronkan...' : `⚡ Sinkronkan (${unprovisionedStudents.length}) Siswa`}</span>
-            </button>
-          )}
-
           <button
             id="btn-quick-add-guru"
             onClick={() => handleOpenAddRole('guru')}
@@ -610,7 +421,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                   type="text"
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
-                  placeholder="Cari nama, NISN, NIP, username, email..."
+                  placeholder="Cari nama, NIP, username, email..."
                   className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -621,7 +432,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium"
               >
                 <option value="all">Semua Role</option>
-                <option value="siswa">Siswa (NISN)</option>
                 <option value="guru">Dewan Guru</option>
                 <option value="bkk">Koordinator BKK</option>
                 <option value="admin">Administrator Utama</option>
@@ -777,7 +587,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                 <tr>
                   <th className="p-3 font-bold text-slate-700">Fitur & Modul Portal</th>
                   <th className="p-3 font-bold text-center text-purple-700">Admin Utama</th>
-                  <th className="p-3 font-bold text-center text-blue-700">Portal Siswa</th>
                   <th className="p-3 font-bold text-center text-emerald-700">Portal Guru</th>
                   <th className="p-3 font-bold text-center text-amber-700">Portal BKK</th>
                 </tr>
@@ -786,42 +595,36 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                 <tr>
                   <td className="p-3 font-semibold">Dashboard & Profil Pribadi</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Admin CMS</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">Portal Siswa</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Portal Guru</td>
                   <td className="p-3 text-center text-amber-600 font-bold">Portal BKK</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-semibold">Jadwal Pelajaran & Kalender</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Full Access</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">Jadwal Kelas Saya</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Jadwal Mengajar</td>
                   <td className="p-3 text-center text-slate-400">-</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-semibold">Absensi / Kehadiran</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Rekapitulasi</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">Presensi Mandiri</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Input Absensi Kelas</td>
                   <td className="p-3 text-center text-slate-400">-</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-semibold">Input & Monitoring Nilai Rapor</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Full Access</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">Lihat Nilai & Rapor</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Input Nilai Mapel</td>
                   <td className="p-3 text-center text-slate-400">-</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-semibold">Jurnal PKL & Monitoring</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Full Access</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">Isi Logbook & Jurnal</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Bimbingan & Verifikasi</td>
                   <td className="p-3 text-center text-amber-600 font-bold">Pantau DUDI Mitra</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-semibold">BKK: Lowongan Kerja & Rekrutmen</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">Full Access</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">Lamar Lowongan BKK</td>
                   <td className="p-3 text-center text-slate-400">-</td>
                   <td className="p-3 text-center text-amber-600 font-bold">Kelola Lowongan & Pelamar</td>
                 </tr>
@@ -837,16 +640,15 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
           <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 my-8">
             <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {formRole === 'siswa' ? <GraduationCap className="w-5 h-5 text-blue-400" /> :
-                 formRole === 'guru' ? <BookOpen className="w-5 h-5 text-emerald-400" /> :
+                {formRole === 'guru' ? <BookOpen className="w-5 h-5 text-emerald-400" /> :
                  formRole === 'bkk' ? <Briefcase className="w-5 h-5 text-amber-400" /> :
                  <Users className="w-5 h-5 text-purple-400" />}
                 <div>
                   <h3 className="text-sm font-bold">
-                    {isEditing ? 'Perbarui Akun Pengguna' : `Tambah Akun ${formRole === 'siswa' ? 'Siswa (Berdasarkan NISN)' : formRole.toUpperCase()}`}
+                    {isEditing ? 'Perbarui Akun Pengguna' : `Tambah Akun ${formRole.toUpperCase()}`}
                   </h3>
                   <p className="text-[10px] text-slate-400">
-                    {formRole === 'siswa' ? 'NISN akan otomatis tersinkronisasi dengan nama siswa' : 'Isi form kredensial login portal'}
+                    Isi form kredensial login portal
                   </p>
                 </div>
               </div>
@@ -859,44 +661,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
             </div>
 
             <form onSubmit={handleSaveUser} className="p-6 space-y-4 text-xs">
-              {/* If creating Siswa account, allow selecting from studentsList */}
-              {!isEditing && formRole === 'siswa' && studentsList.length > 0 && (
-                <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-blue-900 font-bold">Pilih Siswa dari Data Master:</label>
-                    <span className="text-[10px] text-blue-600 font-semibold">Tersedia {studentsList.length} siswa</span>
-                  </div>
-                  <select
-                    value={selectedStudentIdentifier}
-                    onChange={(e) => handleSelectStudent(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-semibold text-xs focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Pilih Siswa (NISN & Nama) --</option>
-                    {studentsList.map(s => {
-                      const sName = s.fullName || (s as any).name;
-                      const sNisn = s.nisn || s.nis;
-                      return (
-                        <option key={s.id} value={sNisn || s.id}>
-                          {sNisn ? `[${sNisn}] ` : ''}{sName} ({s.classId || 'Reguler'})
-                        </option>
-                      );
-                    })}
-                  </select>
-
-                  {matchedStudentInfo && (
-                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-bold">Siswa Ditemukan & Tersinkron:</div>
-                        <div className="text-emerald-700">
-                          {matchedStudentInfo.fullName || (matchedStudentInfo as any).name} • NISN: <span className="font-mono font-bold">{matchedStudentInfo.nisn || matchedStudentInfo.nis}</span> • Kelas: {matchedStudentInfo.classId}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* If creating Guru account, allow selecting from teachersList */}
               {!isEditing && formRole === 'guru' && teachersList.length > 0 && (
                 <div className="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2">
@@ -929,53 +693,32 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                 </div>
               )}
 
-              {/* Username field (NISN for Siswa) */}
+              {/* Username field */}
               <div>
                 <label className="block text-slate-700 font-bold mb-1">
-                  {formRole === 'siswa' ? 'NISN (Nomor Induk Siswa Nasional) *' : 'Username / Login ID *'}
+                  Username / Login ID *
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    value={formUsername}
-                    onChange={(e) => handleUsernameChange(e.target.value)}
-                    placeholder={formRole === 'siswa' ? 'Masukkan 10 digit NISN siswa...' : 'NIP / Username login...'}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold text-blue-700 text-sm"
-                  />
-                  {formRole === 'siswa' && matchedStudentInfo && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1 border border-emerald-300">
-                      <Check className="w-3 h-3 text-emerald-600" />
-                      Tersinkron
-                    </span>
-                  )}
-                </div>
-                {formRole === 'siswa' && (
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    Ketik atau pilih NISN siswa, nama siswa di bawah akan otomatis terisi dari master data.
-                  </p>
-                )}
+                <input
+                  type="text"
+                  required
+                  value={formUsername}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  placeholder="NIP / Username login..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold text-blue-700 text-sm"
+                />
               </div>
 
-              {/* Display Name (Auto-synced) */}
+              {/* Display Name */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-slate-700 font-bold">
-                    {formRole === 'siswa' ? 'Nama Siswa (Tersinkron Otomatis) *' : 'Nama Lengkap & Gelar *'}
-                  </label>
-                  {formRole === 'siswa' && (
-                    <span className="text-[10px] text-blue-600 font-semibold flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-blue-500" />
-                      Auto-sync dari NISN
-                    </span>
-                  )}
-                </div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Nama Lengkap & Gelar *
+                </label>
                 <input
                   type="text"
                   required
                   value={formDisplayName}
                   onChange={(e) => setFormDisplayName(e.target.value)}
-                  placeholder={formRole === 'siswa' ? 'Nama otomatis terisi saat NISN dipilih...' : 'Contoh: Budi Santoso / Siti Rahma, S.Pd'}
+                  placeholder="Contoh: Budi Santoso / Siti Rahma, S.Pd"
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900"
                 />
               </div>
@@ -1014,7 +757,6 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                     onChange={(e) => setFormRole(e.target.value as UserRole)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white font-bold"
                   >
-                    <option value="siswa">Siswa (NISN)</option>
                     <option value="guru">Dewan Guru</option>
                     <option value="bkk">Koordinator BKK</option>
                     <option value="admin">Administrator Utama</option>

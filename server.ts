@@ -49,8 +49,13 @@ async function startServer() {
     next();
   };
 
-  // 3. API Routes FIRST
-  app.use('/api', authRateLimiter, apiRouter);
+  // 3. API Routes FIRST (with strict anti-caching for fresh data delivery)
+  app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  }, authRateLimiter, apiRouter);
 
   // 4. Vite Middleware for Development / Static Dist for Production
   if (process.env.NODE_ENV !== 'production') {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Code, 
   Network, 
@@ -30,6 +30,15 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ schoolInfo, majorsLi
   const [selectedProgram, setSelectedProgram] = useState<string>(
     programs && programs.length > 0 ? programs[0].id : ''
   );
+
+  // Keep selectedProgram in sync if programs list updates from backend
+  useEffect(() => {
+    if (programs && programs.length > 0) {
+      if (!selectedProgram || !programs.some(p => p.id === selectedProgram)) {
+        setSelectedProgram(programs[0].id);
+      }
+    }
+  }, [programs, selectedProgram]);
 
   const getProgramIcon = (iconName: string) => {
     switch (iconName) {
@@ -89,7 +98,7 @@ export const ProgramsView: React.FC<ProgramsViewProps> = ({ schoolInfo, majorsLi
                     {program.code}
                   </span>
                   <span className="text-xs sm:text-sm font-bold line-clamp-1">
-                    {program.name.split('(')[0]}
+                    {program.name}
                   </span>
                 </div>
               </button>

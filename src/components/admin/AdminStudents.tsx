@@ -23,7 +23,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { StudentItem, StudentStatus, GenderType, ClassItem, MajorItem, TeacherItem } from '../../types';
-import { createStudent, updateStudent, deleteStudent } from '../../lib/firebase';
+import { createStudent, updateStudent, deleteStudent } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -569,7 +569,7 @@ export const AdminStudents: React.FC<AdminStudentsProps> = ({
                     onChange={(e) => setFormData(prev => ({ ...prev, nisn: e.target.value }))}
                     className="w-full px-3.5 py-2 text-sm font-mono font-bold text-blue-700 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-blue-50/30"
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">Digunakan sebagai ID Login utama siswa.</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Nomor identitas unik siswa berskala nasional dari Kemendikbud.</p>
                 </div>
 
                 <div>

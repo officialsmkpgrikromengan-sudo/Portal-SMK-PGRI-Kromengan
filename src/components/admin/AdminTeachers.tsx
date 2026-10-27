@@ -20,7 +20,7 @@ import {
   Award
 } from 'lucide-react';
 import { TeacherItem, TeacherStatus, GenderType, SubjectItem, ClassItem } from '../../types';
-import { createTeacher, updateTeacher, deleteTeacher } from '../../lib/firebase';
+import { createTeacher, updateTeacher, deleteTeacher } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 import { ConfirmDialog } from '../common/ConfirmDialog';

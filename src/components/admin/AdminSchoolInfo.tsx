@@ -12,7 +12,7 @@ import {
   Sparkles 
 } from 'lucide-react';
 import { SchoolInfo } from '../../types';
-import { updateSchoolInfo } from '../../lib/firebase';
+import { updateSchoolInfo } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 

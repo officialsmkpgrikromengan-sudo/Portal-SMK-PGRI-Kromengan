@@ -57,7 +57,7 @@ import {
   getAlumniList,
   getTracerSurveysList,
   getTracerResponsesList
-} from './lib/firebase';
+} from './lib/api';
 import { 
   defaultSchoolInfo, 
   defaultNewsList, 
@@ -140,8 +140,7 @@ import { AdminUsers } from './components/admin/AdminUsers';
 import { AdminAuditLogs } from './components/admin/AdminAuditLogs';
 import { AdminBackupDoc } from './components/admin/AdminBackupDoc';
 
-// Portals (Siswa, Guru, BKK) & Login Modal
-import { StudentPortal } from './components/portals/StudentPortal';
+// Portals (Guru, BKK) & Login Modal
 import { TeacherPortal } from './components/portals/TeacherPortal';
 import { BkkPortal } from './components/portals/BkkPortal';
 import { PortalLoginModal } from './components/portals/PortalLoginModal';
@@ -158,7 +157,7 @@ export function App() {
 
   // Login Modal State
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
-  const [loginModalInitialRole, setLoginModalInitialRole] = useState<'siswa' | 'guru' | 'bkk' | 'admin'>('siswa');
+  const [loginModalInitialRole, setLoginModalInitialRole] = useState<'guru' | 'bkk' | 'admin'>('guru');
 
   // Selected item modal states (for direct linking / view from Home)
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -246,7 +245,7 @@ export function App() {
       } else if (role === 'bkk') {
         document.title = `Portal Bursa Kerja Khusus BKK | ${schoolName}`;
       } else {
-        document.title = `Portal Siswa & Akademik | ${schoolName}`;
+        document.title = `Portal Manajemen Sekolah | ${schoolName}`;
       }
     } else {
       const pageTitleMap: Record<NavigationPage, string> = {
@@ -293,15 +292,15 @@ export function App() {
       ]);
 
       if (info) setSchoolInfo(info);
-      if (news && news.length > 0) setNewsList(news);
-      if (events && events.length > 0) setEventsList(events);
-      if (achievements && achievements.length > 0) setAchievementsList(achievements);
-      if (gallery && gallery.length > 0) setGalleryList(gallery);
-      if (majorsData && majorsData.length > 0) setMajorsList(majorsData);
-      if (companiesData && companiesData.length > 0) setCompaniesList(companiesData);
-      if (jobsData && jobsData.length > 0) setJobsList(jobsData);
-      if (alumniData && alumniData.length > 0) setAlumniList(alumniData);
-      if (tracerSurveysData && tracerSurveysData.length > 0) setTracerSurveysList(tracerSurveysData);
+      if (Array.isArray(news)) setNewsList(news);
+      if (Array.isArray(events)) setEventsList(events);
+      if (Array.isArray(achievements)) setAchievementsList(achievements);
+      if (Array.isArray(gallery)) setGalleryList(gallery);
+      if (Array.isArray(majorsData)) setMajorsList(majorsData);
+      if (Array.isArray(companiesData)) setCompaniesList(companiesData);
+      if (Array.isArray(jobsData)) setJobsList(jobsData);
+      if (Array.isArray(alumniData)) setAlumniList(alumniData);
+      if (Array.isArray(tracerSurveysData)) setTracerSurveysList(tracerSurveysData);
 
       // If user is admin, also load master collections, academic modules, and contact messages
       if (user) {
@@ -408,32 +407,9 @@ export function App() {
   }
 
   // ==========================================
-  // ROLE-BASED USER PORTAL VIEW (Siswa, Guru, BKK)
+  // ROLE-BASED USER PORTAL VIEW (Guru, BKK)
   // ==========================================
   if (user && inPortalMode && !inAdminMode) {
-    if (role === 'siswa') {
-      return (
-        <StudentPortal
-          schoolInfo={schoolInfo}
-          studentsList={studentsList}
-          classesList={classesList}
-          majorsList={majorsList}
-          subjectsList={subjectsList}
-          teachersList={teachersList}
-          schedulesList={schedulesList}
-          attendanceList={attendanceList}
-          gradesList={gradesList}
-          internshipsList={internshipsList}
-          internshipJournalsList={internshipJournalsList}
-          internshipGradesList={internshipGradesList}
-          jobsList={jobsList}
-          systemSettings={systemSettings}
-          onBackToPublic={() => setInPortalMode(false)}
-          onRefreshAll={loadAllData}
-        />
-      );
-    }
-
     if (role === 'guru') {
       return (
         <TeacherPortal
@@ -855,7 +831,7 @@ export function App() {
         currentPage={currentPage}
         onNavigate={handleNavigatePage}
         onOpenLoginModal={(initialRole) => {
-          setLoginModalInitialRole(initialRole || 'siswa');
+          setLoginModalInitialRole(initialRole || 'guru');
           setIsLoginModalOpen(true);
         }}
         onOpenUserPortal={() => setInPortalMode(true)}
@@ -937,12 +913,12 @@ export function App() {
         onNavigate={handleNavigatePage}
         onOpenAdmin={() => setInAdminMode(true)}
         onOpenLoginModal={(initialRole) => {
-          setLoginModalInitialRole(initialRole || 'siswa');
+          setLoginModalInitialRole(initialRole || 'guru');
           setIsLoginModalOpen(true);
         }}
       />
 
-      {/* Unified Role Portal Login Modal (Siswa, Guru, BKK, Admin) */}
+      {/* Unified Role Portal Login Modal (Guru, BKK, Admin) */}
       <PortalLoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}

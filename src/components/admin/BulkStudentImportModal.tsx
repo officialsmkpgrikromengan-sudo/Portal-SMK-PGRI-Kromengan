@@ -14,7 +14,7 @@ import {
   Check
 } from 'lucide-react';
 import { StudentItem, ClassItem, MajorItem, GenderType, StudentStatus } from '../../types';
-import { bulkCreateStudents } from '../../lib/firebase';
+import { bulkCreateStudents } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
 interface BulkStudentImportModalProps {

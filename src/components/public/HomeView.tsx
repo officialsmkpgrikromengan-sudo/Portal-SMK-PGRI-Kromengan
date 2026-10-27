@@ -329,7 +329,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <span className="text-[10px] text-slate-400 font-medium">3 Tahun</span>
                   </div>
                   <h3 className="font-bold text-sm text-slate-900 group-hover:text-blue-700 transition-colors leading-snug">
-                    {prog.name.split('(')[0]}
+                    {prog.name}
                   </h3>
                   <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
                     {prog.shortDesc || 'Program Kejuruan Unggulan berstandar industri.'}

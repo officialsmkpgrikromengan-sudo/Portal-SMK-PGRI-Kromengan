@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getUsers, getStudentsList, getTeachersList, logAuditEvent } from '../lib/api';
-import { UserAccount, UserRole, StudentItem, TeacherItem } from '../types';
-import { defaultUsersList, defaultStudentsList, defaultTeachersList } from '../data/defaultData';
+import { getUsers, getTeachersList, logAuditEvent } from '../lib/api';
+import { UserAccount, UserRole, TeacherItem } from '../types';
+import { defaultUsersList, defaultTeachersList } from '../data/defaultData';
 
 export interface AdminAuthUser {
   uid: string;
@@ -10,7 +10,6 @@ export interface AdminAuthUser {
   photoURL?: string | null;
   phone?: string | null;
   role?: UserRole;
-  studentId?: string;
   teacherId?: string;
   username?: string;
 }
@@ -61,7 +60,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           photoURL: parsedAccount.photoUrl || null,
           phone: parsedAccount.phone || null,
           role: parsedAccount.role,
-          studentId: parsedAccount.studentId,
           teacherId: parsedAccount.teacherId,
           username: parsedAccount.username
         });
@@ -104,7 +102,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             photoURL: data.user.photoUrl || null,
             phone: data.user.phone || null,
             role: data.user.role,
-            studentId: data.user.studentId,
             teacherId: data.user.teacherId,
             username: data.user.username
           };
@@ -158,7 +155,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           photoURL: account.photoUrl || null,
           phone: account.phone || null,
           role: account.role,
-          studentId: account.studentId,
           teacherId: account.teacherId,
           username: account.username
         };
@@ -198,40 +194,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       (u.id && u.id.toLowerCase() === idLower) ||
       (u.phone && u.phone.replace(/[^0-9]/g, '') === idLower.replace(/[^0-9]/g, ''))
     );
-
-    if (!match) {
-      let students: StudentItem[] = defaultStudentsList;
-      try {
-        const dbStudents = await getStudentsList();
-        if (dbStudents && dbStudents.length > 0) students = dbStudents;
-      } catch {
-        students = defaultStudentsList;
-      }
-
-      const matchedStudent = students.find(s => 
-        (s.nisn && s.nisn.toLowerCase() === idLower) ||
-        (s.nis && s.nis.toLowerCase() === idLower) ||
-        (s.email && s.email.toLowerCase() === idLower) ||
-        (s.id && s.id.toLowerCase() === idLower) ||
-        (idLower === 'siswa' && targetRole === 'siswa')
-      );
-
-      if (matchedStudent) {
-        match = {
-          id: `user-std-${matchedStudent.id}`,
-          email: matchedStudent.email || `${matchedStudent.nisn || matchedStudent.nis}@siswa.smkpgri.sch.id`,
-          username: matchedStudent.nisn || matchedStudent.nis,
-          initialPassword: 'siswa123456',
-          displayName: matchedStudent.fullName,
-          role: 'siswa',
-          status: matchedStudent.status === 'Nonaktif' ? 'Nonaktif' : 'Aktif',
-          phone: matchedStudent.phone,
-          photoUrl: matchedStudent.photoUrl,
-          studentId: matchedStudent.id,
-          createdAt: new Date().toISOString()
-        };
-      }
-    }
 
     if (!match) {
       let teachers: TeacherItem[] = defaultTeachersList;
@@ -284,15 +246,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         match = defaultUsersList.find(u => u.role === 'kepala_sekolah');
       } else if (idLower === 'tu' || idLower.startsWith('tu@')) {
         match = defaultUsersList.find(u => u.role === 'tu');
-      } else if (idLower === 'siswa' || idLower.startsWith('siswa@')) {
-        match = defaultUsersList.find(u => u.role === 'siswa');
       } else if (idLower === 'guru' || idLower.startsWith('guru@')) {
         match = defaultUsersList.find(u => u.role === 'guru');
       }
     }
 
     if (!match) {
-      throw new Error('Akun tidak ditemukan. Periksa kembali NISN/NIP/Email Anda, atau hubungi Bagian TU/Admin.');
+      throw new Error('Akun tidak ditemukan. Periksa kembali NIP/Username/Email Anda, atau hubungi Administrator.');
     }
 
     if (match.status === 'Nonaktif') {
@@ -302,8 +262,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (targetRole && targetRole !== 'admin') {
       if (targetRole === 'guru' && (match.role !== 'guru' && match.role !== 'kepala_sekolah')) {
         throw new Error(`Akun ini terdaftar sebagai ${match.role.toUpperCase()}, bukan Guru. Silakan masuk melalui tab yang sesuai.`);
-      } else if (targetRole === 'siswa' && match.role !== 'siswa') {
-        throw new Error(`Akun ini terdaftar sebagai ${match.role.toUpperCase()}, bukan Siswa. Silakan masuk melalui tab yang sesuai.`);
       } else if (targetRole === 'bkk' && match.role !== 'bkk') {
         throw new Error(`Akun ini terdaftar sebagai ${match.role.toUpperCase()}, bukan Petugas BKK. Silakan masuk melalui tab yang sesuai.`);
       }
@@ -324,47 +282,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       photoURL: updatedAccount.photoUrl || null,
       phone: updatedAccount.phone || null,
       role: updatedAccount.role,
-      studentId: updatedAccount.studentId,
       teacherId: updatedAccount.teacherId,
       username: updatedAccount.username
     };
     setUser(authUser);
 
     await logAuditEvent('LOGIN', 'Auth', updatedAccount.id, `Pengguna "${updatedAccount.displayName}" (${updatedAccount.role.toUpperCase()}) berhasil login.`);
-
-    return updatedAccount;
-  };
-
-  const loginAsDemoRole = async (targetRole: UserRole): Promise<UserAccount> => {
-    let allUsers = defaultUsersList;
-    try {
-      const dbUsers = await getUsers();
-      if (dbUsers.length > 0) allUsers = dbUsers;
-    } catch {
-      // fallback
-    }
-
-    const demoUser = allUsers.find(u => u.role === targetRole) || defaultUsersList.find(u => u.role === targetRole) || defaultUsersList[0];
-    const updatedAccount: UserAccount = {
-      ...demoUser,
-      lastLoginAt: new Date().toISOString()
-    };
-
-    setCurrentUserAccount(updatedAccount);
-    localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(updatedAccount));
-
-    const authUser: AdminAuthUser = {
-      uid: updatedAccount.id,
-      email: updatedAccount.email,
-      displayName: updatedAccount.displayName,
-      photoURL: updatedAccount.photoUrl || null,
-      phone: updatedAccount.phone || null,
-      role: updatedAccount.role,
-      studentId: updatedAccount.studentId,
-      teacherId: updatedAccount.teacherId,
-      username: updatedAccount.username
-    };
-    setUser(authUser);
 
     return updatedAccount;
   };
@@ -418,6 +341,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       displayName: localAdmin.displayName,
       role: 'admin'
     });
+  };
+
+  const loginAsDemoRole = async (targetRole: UserRole): Promise<UserAccount> => {
+    let demoAcc = defaultUsersList.find(u => u.role === targetRole);
+    if (!demoAcc) {
+      demoAcc = {
+        id: `user-${targetRole}-1`,
+        email: `${targetRole}@smkpgri.sch.id`,
+        displayName: `${targetRole.toUpperCase()}`,
+        role: targetRole,
+        status: 'Aktif',
+        createdAt: new Date().toISOString()
+      };
+    }
+    setCurrentUserAccount(demoAcc);
+    localStorage.setItem(LOCAL_USER_SESSION_KEY, JSON.stringify(demoAcc));
+    const authUser: AdminAuthUser = {
+      uid: demoAcc.id,
+      email: demoAcc.email,
+      displayName: demoAcc.displayName,
+      photoURL: demoAcc.photoUrl || null,
+      phone: demoAcc.phone || null,
+      role: demoAcc.role,
+      teacherId: demoAcc.teacherId,
+      username: demoAcc.username
+    };
+    setUser(authUser);
+    return demoAcc;
   };
 
   const loginDemoAdmin = () => {

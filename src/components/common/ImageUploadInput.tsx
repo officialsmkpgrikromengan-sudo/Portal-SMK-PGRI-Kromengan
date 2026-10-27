@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Link as LinkIcon, Image as ImageIcon, Trash2, Check } from 'lucide-react';
-import { fileToDataUrl } from '../../lib/firebase';
+import { fileToDataUrl } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
 interface ImageUploadInputProps {

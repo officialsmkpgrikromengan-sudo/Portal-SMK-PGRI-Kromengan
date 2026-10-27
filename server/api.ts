@@ -11,6 +11,7 @@ import {
   seedDatabaseIfNeeded
 } from './db';
 import { defaultTracerSurveysList } from '../src/data/defaultData';
+import { generateContentServerSide } from './gemini';
 
 export const apiRouter = Router();
 
@@ -25,6 +26,64 @@ function sanitize(input: any): any {
 function s(val: any, fallback = ''): string {
   return val !== undefined && val !== null ? String(val) : fallback;
 }
+
+// --------------------------------------------------------------------------
+// Helper: Synchronize school_info.programs & stats.majors directly from majors table
+// --------------------------------------------------------------------------
+export function syncSchoolInfoMajorsInDb(): any {
+  try {
+    const rawSchoolInfo = getById<any>('school_info', 'main');
+    if (!rawSchoolInfo) return null;
+
+    const majors = getAll<any>('majors', 'code ASC');
+    const activeMajors = majors.filter(m => {
+      const st = String(m.status || '').toLowerCase();
+      return st === 'aktif' || st === 'active' || !m.status;
+    });
+
+    const programs = activeMajors.map(m => {
+      const existingProg = (rawSchoolInfo.programs || []).find((p: any) =>
+        p.id === m.id ||
+        p.code?.toUpperCase() === m.code?.toUpperCase() ||
+        p.name?.toLowerCase().includes(m.code?.toLowerCase())
+      );
+
+      return {
+        id: m.id || existingProg?.id || `prog-${m.code?.toLowerCase() || 'voc'}`,
+        name: m.name,
+        code: m.code,
+        shortDesc: m.description?.trim() || existingProg?.shortDesc || `Program Keahlian ${m.name} SMK PGRI Kromengan.`,
+        fullDesc: m.description?.trim() || existingProg?.fullDesc || existingProg?.shortDesc || `Program Keahlian ${m.name} SMK PGRI Kromengan berorientasi industri dan sertifikasi profesi.`,
+        iconName: m.iconName || existingProg?.iconName || 'Code',
+        imageUrl: m.imageUrl || existingProg?.imageUrl || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
+        jobProspects: (m.jobProspects && m.jobProspects.length > 0) ? m.jobProspects : (existingProg?.jobProspects || []),
+        competencies: (m.competencies && m.competencies.length > 0) ? m.competencies : (existingProg?.competencies || []),
+        headOfProgram: m.headOfProgram || existingProg?.headOfProgram || ''
+      };
+    });
+
+    const updated = {
+      ...rawSchoolInfo,
+      programs,
+      stats: {
+        ...(rawSchoolInfo.stats || {}),
+        majors: programs.length
+      }
+    };
+
+    const now = new Date().toISOString();
+    db.prepare('UPDATE school_info SET data = ?, updatedAt = ? WHERE id = ?')
+      .run(JSON.stringify(updated), now, 'main');
+
+    return updated;
+  } catch (err) {
+    console.error('Failed to sync school_info with majors in SQLite:', err);
+    return null;
+  }
+}
+
+// Immediately synchronize on startup
+syncSchoolInfoMajorsInDb();
 
 // --------------------------------------------------------------------------
 // 1. Health & Database Meta
@@ -300,7 +359,8 @@ apiRouter.put('/auth/password', (req: Request, res: Response) => {
 // 3. School Info & System Settings
 // --------------------------------------------------------------------------
 apiRouter.get('/school-info', (req: Request, res: Response) => {
-  const info = getById('school_info', 'main');
+  const synced = syncSchoolInfoMajorsInDb();
+  const info = synced || getById('school_info', 'main');
   res.json({ success: true, data: info });
 });
 
@@ -309,7 +369,8 @@ apiRouter.put('/school-info', (req: Request, res: Response) => {
     const data = req.body;
     const now = new Date().toISOString();
     db.prepare('INSERT OR REPLACE INTO school_info (id, data, updatedAt) VALUES (?, ?, ?)').run('main', JSON.stringify(data), now);
-    res.json({ success: true, data });
+    const synced = syncSchoolInfoMajorsInDb();
+    res.json({ success: true, data: synced || data });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -511,7 +572,9 @@ apiRouter.post('/majors', (req: Request, res: Response) => {
     const full = { ...item, id, createdAt: item.createdAt || now, updatedAt: now };
 
     const stmt = db.prepare('INSERT OR REPLACE INTO majors (id, code, name, shortName, status, data, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    stmt.run(id, s(full.code), s(full.name), s(full.shortName, full.code), s(full.status, 'active'), JSON.stringify(full), s(full.createdAt, now), now);
+    stmt.run(id, s(full.code), s(full.name), s(full.shortName, full.code), s(full.status, 'Aktif'), JSON.stringify(full), s(full.createdAt, now), now);
+
+    syncSchoolInfoMajorsInDb();
 
     res.status(201).json({ success: true, data: full });
   } catch (err: any) {
@@ -523,11 +586,14 @@ apiRouter.put('/majors/:id', (req: Request, res: Response) => {
   try {
     const id = req.params.id;
     const item = req.body;
+    const existing = getById<any>('majors', id) || {};
     const now = new Date().toISOString();
-    const full = { ...item, id, updatedAt: now };
+    const full = { ...existing, ...item, id, updatedAt: now };
 
     const stmt = db.prepare('UPDATE majors SET code = ?, name = ?, shortName = ?, status = ?, data = ?, updatedAt = ? WHERE id = ?');
-    stmt.run(s(full.code), s(full.name), s(full.shortName, full.code), s(full.status, 'active'), JSON.stringify(full), now, id);
+    stmt.run(s(full.code), s(full.name), s(full.shortName, full.code), s(full.status, 'Aktif'), JSON.stringify(full), now, id);
+
+    syncSchoolInfoMajorsInDb();
 
     res.json({ success: true, data: full });
   } catch (err: any) {
@@ -537,6 +603,7 @@ apiRouter.put('/majors/:id', (req: Request, res: Response) => {
 
 apiRouter.delete('/majors/:id', (req: Request, res: Response) => {
   const ok = deleteById('majors', req.params.id);
+  syncSchoolInfoMajorsInDb();
   res.json({ success: ok });
 });
 
@@ -1542,4 +1609,30 @@ apiRouter.post('/messages', (req: Request, res: Response) => {
 apiRouter.delete('/messages/:id', (req: Request, res: Response) => {
   const ok = deleteById('messages', req.params.id);
   res.json({ success: ok });
+});
+
+// --------------------------------------------------------------------------
+// 15. Server-Side AI Proxy Gateway (Gemini API Key Protection)
+// --------------------------------------------------------------------------
+// Ensures the Gemini API key is NEVER sent to or stored in client-side code,
+// and prevents leakage when repository is pushed to GitHub.
+apiRouter.post('/ai/generate', async (req: Request, res: Response) => {
+  try {
+    const { prompt, systemInstruction } = req.body;
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Parameter prompt diperlukan dan harus berupa teks string.'
+      });
+    }
+
+    const text = await generateContentServerSide(prompt, systemInstruction);
+    res.json({ success: true, text });
+  } catch (err: any) {
+    console.error('[Secure AI Proxy Error]:', err.message);
+    res.status(500).json({
+      success: false,
+      error: 'Fitur AI sedang tidak dapat diakses. Pastikan GEMINI_API_KEY telah diatur di backend environment server.'
+    });
+  }
 });

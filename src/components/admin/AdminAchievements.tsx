@@ -12,7 +12,7 @@ import {
   Save 
 } from 'lucide-react';
 import { AchievementItem, AchievementLevel } from '../../types';
-import { createAchievement, updateAchievement, deleteAchievement } from '../../lib/firebase';
+import { createAchievement, updateAchievement, deleteAchievement } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ImageUploadInput } from '../common/ImageUploadInput';
 import { ConfirmDialog } from '../common/ConfirmDialog';

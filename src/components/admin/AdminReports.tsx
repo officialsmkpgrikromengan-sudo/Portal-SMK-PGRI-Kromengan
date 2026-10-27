@@ -44,7 +44,7 @@ import {
   ReportType
 } from '../../types';
 import { useToast } from '../../context/ToastContext';
-import { logAuditEvent } from '../../lib/firebase';
+import { logAuditEvent } from '../../lib/api';
 
 interface AdminReportsProps {
   schoolInfo: SchoolInfo;

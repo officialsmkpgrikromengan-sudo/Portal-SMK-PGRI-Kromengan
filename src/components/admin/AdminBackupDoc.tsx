@@ -38,7 +38,7 @@ import {
   SystemSettings
 } from '../../types';
 import { useToast } from '../../context/ToastContext';
-import { logAuditEvent } from '../../lib/firebase';
+import { logAuditEvent } from '../../lib/api';
 
 interface AdminBackupDocProps {
   schoolInfo: SchoolInfo;
@@ -455,26 +455,37 @@ export const AdminBackupDoc: React.FC<AdminBackupDocProps> = ({
         </div>
       )}
 
-      {/* TAB 4: ENVIRONMENT VARIABLES */}
+      {/* TAB 4: ENVIRONMENT VARIABLES & KEAMANAN GITHUB */}
       {activeTab === 'env' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
           <div>
-            <h3 className="text-sm font-bold text-slate-800">Deklarasi Environment Variables (.env.example)</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Daftar variabel lingkungan untuk konfigurasi production</p>
+            <h3 className="text-sm font-bold text-slate-800">Deklarasi Environment Variables & Keamanan API Key GitHub</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Daftar variabel lingkungan aman dan panduan proteksi kredensial rahasia saat upload ke GitHub</p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900 text-blue-300 font-mono text-xs overflow-x-auto leading-relaxed">
-            <pre>{`# Firebase Client Configuration (Initialized safely via firebase-applet-config.json)
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+            <pre>{`# =======================================================
+# ENVIRONMENT VARIABLES (.env) - JANGAN DI-COMMIT KE GITHUB!
+# File .env otomatis diabaikan oleh .gitignore
+# =======================================================
 
-# Application Mode
+# 1. Google Gemini AI API Key (HANYA SISI SERVER)
+# Kunci ini diproses secara aman di backend (/server) dan TIDAK PERNAH
+# dikirim atau diekspos ke browser / public repository.
+GEMINI_API_KEY=
+
+# 2. Base URL Aplikasi
+APP_URL=
+
+# 3. Mode Lingkungan & Port Server
 NODE_ENV=production
-PORT=3000`}</pre>
+PORT=3000
+
+# -------------------------------------------------------
+# ATURAN KEAMANAN GITHUB:
+# 1. File .env, file .sqlite, dan berkas kredensial dimasukkan ke .gitignore.
+# 2. Jangan pernah memberi awalan VITE_ pada kunci rahasia/API key pribadi.
+# 3. Kunci API hanya dipanggil di server backend melalui process.env.`}</pre>
           </div>
         </div>
       )}

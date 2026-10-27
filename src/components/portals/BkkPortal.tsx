@@ -40,7 +40,7 @@ import {
   updateJobApplicationStatus, 
   saveCompany, 
   deleteCompany 
-} from '../../lib/firebase';
+} from '../../lib/api';
 
 interface BkkPortalProps {
   schoolInfo: SchoolInfo;
@@ -345,7 +345,7 @@ export const BkkPortal: React.FC<BkkPortalProps> = ({
                   </h3>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Publikasikan lowongan kerja dari mitra industri langsung ke portal siswa & alumni.
+                  Publikasikan lowongan kerja dari mitra industri langsung ke portal BKK & bursa kerja.
                 </p>
                 <button
                   onClick={openCreateJob}

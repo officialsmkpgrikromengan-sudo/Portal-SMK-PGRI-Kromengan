@@ -75,8 +75,11 @@ export const fileToDataUrl = (file: File): Promise<string> => {
 async function fetchApi<T>(url: string, options?: RequestInit, fallback?: T): Promise<T> {
   try {
     const res = await fetch(url, {
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
         ...(options?.headers || {})
       },
       ...options
@@ -1061,3 +1064,16 @@ export const AUDIT_LOGS_COLLECTION = 'audit_logs';
 export const getDatabaseStats = async (): Promise<any> => {
   return fetchApi<any>('/api/database/stats');
 };
+
+// ==========================================
+// Secure AI Assistant Helper (Proxied via /api)
+// API Key is strictly hidden on the server backend
+// ==========================================
+export const generateAIResponse = async (prompt: string, systemInstruction?: string): Promise<string> => {
+  const res = await fetchApi<{ success: boolean; text: string }>('/api/ai/generate', {
+    method: 'POST',
+    body: JSON.stringify({ prompt, systemInstruction })
+  });
+  return res.text || '';
+};
+

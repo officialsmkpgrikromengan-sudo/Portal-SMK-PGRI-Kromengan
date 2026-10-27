@@ -12,7 +12,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { ContactMessage } from '../../types';
-import { deleteMessage } from '../../lib/firebase';
+import { deleteMessage } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 

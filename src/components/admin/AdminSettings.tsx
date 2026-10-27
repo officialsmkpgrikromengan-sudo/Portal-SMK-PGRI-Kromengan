@@ -64,7 +64,7 @@ import {
   getUsers,
   saveUser,
   deleteUser
-} from '../../lib/firebase';
+} from '../../lib/api';
 import { defaultSystemSettings } from '../../data/defaultData';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 
@@ -128,13 +128,12 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
   const [copiedUserKey, setCopiedUserKey] = useState<string | null>(null);
 
   // Quick Add User State
-  const [quickRole, setQuickRole] = useState<UserRole>('siswa');
-  const [quickSelectedStudent, setQuickSelectedStudent] = useState('');
+  const [quickRole, setQuickRole] = useState<UserRole>('guru');
   const [quickSelectedTeacher, setQuickSelectedTeacher] = useState('');
   const [quickName, setQuickName] = useState('');
   const [quickUsername, setQuickUsername] = useState('');
   const [quickEmail, setQuickEmail] = useState('');
-  const [quickPassword, setQuickPassword] = useState('siswa123456');
+  const [quickPassword, setQuickPassword] = useState('guru123456');
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const fetchSettingsUsers = async () => {
@@ -359,17 +358,6 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
   };
 
   // Quick Account Handlers
-  const handleSelectQuickStudent = (nis: string) => {
-    setQuickSelectedStudent(nis);
-    const st = studentsList.find(s => s.nis === nis);
-    if (st) {
-      setQuickName(st.name);
-      setQuickUsername(st.nis || st.nisn);
-      setQuickEmail(st.email || `${st.nis}@siswa.smkpgri.sch.id`);
-      setQuickPassword('siswa123456');
-    }
-  };
-
   const handleSelectQuickTeacher = (nip: string) => {
     setQuickSelectedTeacher(nip);
     const tc = teachersList.find(t => t.nip === nip);
@@ -402,10 +390,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
         updatedAt: new Date().toISOString()
       };
 
-      if (quickRole === 'siswa') {
-        const matched = studentsList.find(s => s.nis === quickSelectedStudent);
-        if (matched) newAcc.studentId = matched.id;
-      } else if (quickRole === 'guru') {
+      if (quickRole === 'guru') {
         const matched = teachersList.find(t => t.nip === quickSelectedTeacher);
         if (matched) newAcc.teacherId = matched.id;
       }
@@ -415,7 +400,6 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
       setQuickName('');
       setQuickUsername('');
       setQuickEmail('');
-      setQuickSelectedStudent('');
       setQuickSelectedTeacher('');
       fetchSettingsUsers();
     } catch (err) {
@@ -654,7 +638,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Akun Siswa, Guru & BKK</span>
+          <span>Akun Guru & BKK</span>
         </button>
 
         <button
@@ -1316,7 +1300,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: AKUN SISWA, GURU & BKK                                              */}
+      {/* TAB 4: AKUN GURU & BKK                                                     */}
       {/* ========================================================================= */}
       {activeTab === 'users' && (
         <div className="space-y-6">
@@ -1326,9 +1310,9 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
                 <Users className="w-3.5 h-3.5" />
                 <span>Manajemen Akses Login Portal Sekolah</span>
               </div>
-              <h3 className="text-xl font-extrabold text-white">Akun Login Siswa, Guru & Petugas BKK</h3>
+              <h3 className="text-xl font-extrabold text-white">Akun Login Guru & Petugas BKK</h3>
               <p className="text-xs text-slate-300 mt-1 max-w-xl">
-                Siswa, Guru, dan Petugas BKK tidak dapat mendaftar secara publik. Admin membuatkan akun di menu ini dan membagikan kredensial login (Username & Password) kepada mereka.
+                Guru dan Petugas BKK tidak dapat mendaftar secara publik. Admin membuatkan akun di menu ini dan membagikan kredensial login (Username & Password) kepada mereka.
               </p>
             </div>
             <div className="shrink-0 flex items-center gap-2">
@@ -1351,27 +1335,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
             </div>
 
             <form onSubmit={handleCreateQuickAccount} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuickRole('siswa');
-                    setQuickPassword('siswa123456');
-                    if (studentsList[0]) handleSelectQuickStudent(studentsList[0].nis);
-                  }}
-                  className={`p-3 rounded-2xl border text-left transition-all ${
-                    quickRole === 'siswa'
-                      ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-500/20'
-                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-blue-600" />
-                    <span className="font-bold text-slate-900">1. Akun Siswa</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1">Gunakan NIS sebagai ID Login</p>
-                </button>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -1387,7 +1351,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-emerald-600" />
-                    <span className="font-bold text-slate-900">2. Akun Guru</span>
+                    <span className="font-bold text-slate-900">1. Akun Guru</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">Gunakan NIP sebagai ID Login</p>
                 </button>
@@ -1409,30 +1373,11 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-amber-600" />
-                    <span className="font-bold text-slate-900">3. Akun BKK</span>
+                    <span className="font-bold text-slate-900">2. Akun BKK</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">Petugas Penyaluran Karir</p>
                 </button>
               </div>
-
-              {/* Selector Helper for Siswa */}
-              {quickRole === 'siswa' && studentsList.length > 0 && (
-                <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-200">
-                  <label className="block text-blue-900 font-bold mb-1">Pilih Siswa dari Data Master:</label>
-                  <select
-                    value={quickSelectedStudent}
-                    onChange={(e) => handleSelectQuickStudent(e.target.value)}
-                    className="w-full p-2.5 bg-white rounded-xl border border-blue-300 font-semibold text-xs"
-                  >
-                    <option value="">-- Pilih Siswa untuk Auto-Fill --</option>
-                    {studentsList.map(s => (
-                      <option key={s.id} value={s.nis}>
-                        {s.name} (NIS: {s.nis} - Kelas {s.classId})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               {/* Selector Helper for Guru */}
               {quickRole === 'guru' && teachersList.length > 0 && (
@@ -1547,7 +1492,6 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
                       <td className="py-2.5 px-3 font-bold text-slate-900">{acc.displayName}</td>
                       <td className="py-2.5 px-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          acc.role === 'siswa' ? 'bg-blue-100 text-blue-800' :
                           acc.role === 'guru' ? 'bg-emerald-100 text-emerald-800' :
                           acc.role === 'bkk' ? 'bg-amber-100 text-amber-800' :
                           'bg-purple-100 text-purple-800'
@@ -1626,7 +1570,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Sistem Autentikasi</span>
                 <span className="font-extrabold text-slate-900 mt-0.5 block">Role-Based Auth (Scrypt Hashed)</span>
-                <span className="text-[11px] text-slate-500">Siswa, Guru, BKK, Admin & Google</span>
+                <span className="text-[11px] text-slate-500">Guru, BKK, Admin & Google</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">

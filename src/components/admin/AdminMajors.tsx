@@ -15,7 +15,7 @@ import {
   Info
 } from 'lucide-react';
 import { MajorItem, MajorStatus } from '../../types';
-import { createMajor, updateMajor, deleteMajor } from '../../lib/firebase';
+import { createMajor, updateMajor, deleteMajor } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 

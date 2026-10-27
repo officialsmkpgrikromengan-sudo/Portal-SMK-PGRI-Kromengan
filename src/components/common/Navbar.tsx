@@ -20,7 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 interface NavbarProps {
   currentPage: NavigationPage;
   onNavigate: (page: NavigationPage) => void;
-  onOpenLoginModal: (initialRole?: 'siswa' | 'guru' | 'bkk' | 'admin') => void;
+  onOpenLoginModal: (initialRole?: 'guru' | 'bkk' | 'admin') => void;
   onOpenUserPortal: () => void;
   schoolInfo: SchoolInfo;
 }
@@ -64,14 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const getRoleBadge = () => {
-    if (role === 'siswa') {
-      return {
-        label: 'Siswa',
-        name: currentUserAccount?.displayName || 'Siswa',
-        bg: 'bg-blue-600',
-        icon: <GraduationCap className="w-3.5 h-3.5" />
-      };
-    } else if (role === 'guru') {
+    if (role === 'guru') {
       return {
         label: 'Guru & Tendik',
         name: currentUserAccount?.displayName || 'Guru',
@@ -217,8 +210,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             {!user ? (
               <button
                 id="btn-nav-login-portal"
-                onClick={() => onOpenLoginModal('siswa')}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                onClick={() => onOpenLoginModal('guru')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs hover:shadow-sm transition-all cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Masuk Portal</span>
@@ -251,8 +244,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-2 lg:hidden">
             {!user && (
               <button
-                onClick={() => onOpenLoginModal('siswa')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs"
+                onClick={() => onOpenLoginModal('guru')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs"
               >
                 <LogIn className="w-3 h-3" />
                 <span>Portal</span>
@@ -282,12 +275,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id="btn-mobile-login-portal"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    onOpenLoginModal('siswa');
+                    onOpenLoginModal('guru');
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Masuk Portal (Siswa, Guru, BKK)</span>
+                  <span>Masuk Portal (Guru, BKK, Admin)</span>
                 </button>
               ) : (
                 <div className="space-y-2">
